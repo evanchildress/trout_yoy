@@ -1,0 +1,16 @@
+tribs<-data.table(dbGetQuery(link$conn,"SELECT * FROM tags_tribs_wb WHERE species = 'bkt' OR species = 'bnt';"))
+tribs[,line_number:=NULL]
+trout<-data.table(dbGetQuery(link$conn,"SELECT * FROM tags_trout_wb WHERE species = 'bkt' OR species = 'bnt';"))
+setnames(trout,tolower(names(trout)))
+trout<-rbind(trout,tribs)
+rm(tribs)
+
+trout<-trout[survey=="shock" & area %in% c("inside","trib")]
+trout[,measured_length:=as.numeric(measured_length)]
+trout[tag=="0.9999",tag:=as.character(NA)]
+trout[,date:=as.Date(parse_date_time(date,orders='mdy'))]
+
+trout$index<-1:nrow(trout)
+trout<-trout[!section %in% c(-1,0)]
+
+assign('trout',trout,env=shared_data)
