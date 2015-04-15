@@ -16,11 +16,11 @@ sample_dates[i,season:=season(median_sample_date)]
 
 abund.array<-function(data,season_set=3,age_class){
   if(age_class=="adult"){                                     
-    data_subset<-data[hatch_year!=year(date) & sample_name %in% sample_dates[season==season_set,sample_name]]
+    data_subset<-data[cohort!=year(date) & sample_name %in% sample_dates[season==season_set,sample_name]]
   }
   
   if(age_class=="yoy"){                                     
-    data_subset<-data[hatch_year==year(date) & sample_name %in% sample_dates[season==season_set,sample_name]]
+    data_subset<-data[cohort==year(date) & sample_name %in% sample_dates[season==season_set,sample_name]]
   }
   
   abund_array<-acast(melt(data_subset[,length(tag),by=c("species","sample_name","section","pass","river")],

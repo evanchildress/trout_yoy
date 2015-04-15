@@ -36,6 +36,7 @@ bla<-data.table(melt(bla,id=c("date")))
 setnames(bla,c("date","river","temperature"))
 ed[,temperature:=NULL]
 setkey(bla,river,date)
+setkey(ed,river,date)
 ed<-ed[bla]
 
 for(i in ed[river=="west brook"&is.na(temperature),date]){

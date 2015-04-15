@@ -1,0 +1,70 @@
+model{
+  #Priors
+  #State process
+  for(g in 1:2){
+    for(sp in 1:2){
+      for(r in 1:4){
+        mu[r,sp,g]~dnorm(0,0.01) #grand mean
+  
+  for(f in 1:6){
+  beta[r,f,sp,g]~dnorm(0,0.01)
+  }}}}
+
+
+  #Random section effect
+  for(g in 1:2){
+    for(sp in 1:2){  
+      for(r in 1:4){
+        for(i in 1:nsections[r]){
+          alpha[i,r,sp,g]~dnorm(0,tau.alpha[r,g,sp])
+          }
+      tau.alpha[r,sp,g]<-pow(sd.alpha[r,g,sp],-2)
+      sd.alpha[r,sp,g]~dunif(0,5)
+  }}}
+  
+  #Random year effect
+  for(g in 1:2){
+    for(sp in 1:2){  
+      for(r in 1:4){
+        for(j in 1:nsamples){
+          eps[j,r,sp,g]~dnorm(0,tau.eps[r,g,sp])
+        }
+        tau.eps[r,sp,g]<-pow(sd.eps[r,g,sp],-2)
+        sd.eps[r,sp,g]~dunif(0,5)
+  }}}
+
+  #Observation process
+  for(sp in 1:2){
+    for(r in 1:4){
+      mu.p[r,sp]~dnorm(0,0.01)
+    }
+  }
+  
+  #Likelihood for yoy
+  for(g in 1:2){
+    for(sp in 1:2){
+      for(r in 1:4){
+        for(j in 1:nsamples){
+          for(i in 1:nsections[r]){
+            N[i,j,r,sp,g]~dpois(lambda[i,j,r,sp,g])
+              log(lambda[i,j,r,sp,g])<-mu[r,sp,g]+ alpha[i,r,sp,g]+eps[j,r,sp,g]+
+                                       beta[r,1,sp,g]*covariates[j,r,1]+
+                                       beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]+
+                                       beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]+
+                                       beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]
+
+              N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
+              y[i,j,r,sp,1,g]~dbin(p[i,j,r,sp,g],N[i,j,r,sp,g])
+              y[i,j,r,sp,2,g]~dbin(p[i,j,r,sp,g],N2[i,j,r,sp,g])
+              p[i,j,r,sp,g]<-exp(lp[i,j,r,sp,g])/(1+exp(lp[i,j,r,sp,g]))
+              lp[i,j,r,sp,g]<-mu.p[r,sp]#+alpha.p[i,r]
+               }}}}}
+  
+  #Derived output
+  for(g in 1:2){
+    for(sp in 1:2){
+      for(r in 1:4){
+        for(j in 1:nsamples){
+          tot.pop[j,r,sp,g]<-sum(N[1:nsections[r],j,r,sp,g])
+  }}}}
+}
