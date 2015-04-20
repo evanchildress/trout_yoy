@@ -23,8 +23,8 @@ abund.array<-function(data,season_set=3,age_class){
     data_subset<-data[cohort==year(date) & sample_name %in% sample_dates[season==season_set,sample_name]]
   }
   
-  abund_array<-acast(melt(data_subset[,length(tag),by=c("species","sample_name","section","pass","river")],
-                          id=c("species","sample_name","section","pass","river")),as.numeric(section)~sample_name~river~species~pass)
+  abund_array<-acast(melt(data_subset[,length(tag),by=c("species","sample_name","section","river")],
+                          id=c("species","sample_name","section","river")),as.numeric(section)~sample_name~river~species)
   
   abund_array[is.na(abund_array)]<-0
   rivers<-unique(data$river)[order(unique(data$river))]
@@ -32,10 +32,10 @@ abund.array<-function(data,season_set=3,age_class){
   nsections<-c(14,14,15,47)
   
   for(r in 1:3){
-    abund_array[(nsections[r]+1):dim(abund_array)[1],,rivers[r],,]<-NA
+    abund_array[(nsections[r]+1):dim(abund_array)[1],,rivers[r],]<-NA
   }
   
-  abund_array[,c("30","36"),rivers[1:3],,]<-NA
+  abund_array[,c("30","36"),rivers[1:3],]<-NA
   
   return(abund_array)
 }

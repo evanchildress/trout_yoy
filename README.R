@@ -1,6 +1,6 @@
 root <- '~/trout_yoy'
 
-start_year <- 1998
+start_year <- 2002
 end_year <- 2014
 
 do <- list(
@@ -8,12 +8,14 @@ do <- list(
 		'load_data.R',
     'create_no_catch.R',
     'create_hatch_year.R',
-    'create_abundance_arrays.R'
+    'create_abundance_arrays.R',
+    'create_detection_array.R'
 	),
   env_prep = c(
     'load_data.R',
     'add_early_trib_predictions.R',
-    'create_covariates.R'
+    'create_covariates.R',
+    'create_loess_covariates.R'
     )
 )
 

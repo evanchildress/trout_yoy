@@ -53,11 +53,11 @@ model{
                                        beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]+
                                        beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]
 
-              N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
-              y[i,j,r,sp,1,g]~dbin(p[i,j,r,sp,g],N[i,j,r,sp,g])
-              y[i,j,r,sp,2,g]~dbin(p[i,j,r,sp,g],N2[i,j,r,sp,g])
-              p[i,j,r,sp,g]<-exp(lp[i,j,r,sp,g])/(1+exp(lp[i,j,r,sp,g]))
-              lp[i,j,r,sp,g]<-mu.p[r,sp]#+alpha.p[i,r]
+              #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
+              y[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+              #y[i,j,r,sp,2,g]~dbin(p[j,r],N2[i,j,r,sp,g])
+              #p[i,j,r,sp,g]<-exp(lp[i,j,r,sp,g])/(1+exp(lp[i,j,r,sp,g]))
+              #lp[i,j,r,sp,g]<-mu.p[r,sp]#+alpha.p[i,r]
                }}}}}
   
   #Derived output

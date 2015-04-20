@@ -55,5 +55,15 @@ ed$river<-tolower(ed$river)
 dbWriteTable(conn=link$conn, name='data_environmental', value=ed,
              row.names=FALSE, overwrite=TRUE, append=FALSE)
 
+edLoess<-data.table(dbGetQuery(conn=link$conn,
+              "SELECT * FROM data_environmental_with_zst_zsd"))
+edLoess<-edLoess[,list(river,date_ct,
+                       daily_deviation_from_seasonal_mean_discharge,
+                       daily_deviation_from_seasonal_mean_temperature)]
+setnames(edLoess,c("river","date","discharge","temperature"))
+setkey(edLoess,river,date)
+edLoess[,year:=year(date)]
+
 #make it available in shared_data
 assign("ed",data.table(ed),env=shared_data)
+assign("edLoess",edLoess,env=shared_data)

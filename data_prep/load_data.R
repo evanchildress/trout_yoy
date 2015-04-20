@@ -16,14 +16,4 @@ trout[measured_length==0,measured_length:=NA]
 trout$index<-1:nrow(trout)
 trout<-trout[!section %in% c(-1,0)]
 
-load("~/simpleCJS/outMSRiver.rDATA") #results of simpleCJS model to provide detection probabilities
-rm(d)
-detection<-apply(out$BUGSoutput$sims.list$pBeta,
-                 c(2,3,4),
-                 FUN=function(x){
-                   mean(inv.logit(x))})
-
-setnames(detection,c('season','year','river','pMean','pLower','pUpper'))
-
-assign('detection',detection,env=shared_env)
 assign('trout',trout,env=shared_data)

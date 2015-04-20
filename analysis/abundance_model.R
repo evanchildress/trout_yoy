@@ -2,18 +2,18 @@ data_root<-"~/process-data/data_store/processed_data"
 
 load(file.path(data_root,"abundance_arrays.rDATA"))
 
+detection<-readRDS(file.path(data_root,"detectionFromCJS.rds"))
 covariates<-readRDS(file.path(data_root,"covariates.rds"))
 covariates[1,,9]<-0
 
 nsections<-c(14,14,15,47)
 
-y<-y[,3:15,,,,]
-N<-array(0,dim=dim(y)[c(1:4,6)])
-
-N<-N+apply(y,c(1,2,3,4,6),sum,na.rm=T)
-for(r in 1:3){
-  N[(nsections[r]+1):47,,r,,]<-NA
-}
+y<-y[,3:15,,,]
+N<-y #use naive estimate as initial value
+# N<-array(10,dim=dim(y))
+# for(r in 1:3){
+#   N[(nsections[r]+1):47,,r,,]<-NA
+# }
 
 
 
@@ -72,9 +72,9 @@ cat("model{
                                        beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]+
                                        beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]
 
-              N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
-              y[i,j,r,sp,1,g]~dbin(p[j,r],N[i,j,r,sp,g])
-              y[i,j,r,sp,2,g]~dbin(p[j,r],N2[i,j,r,sp,g])
+              #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
+              y[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+              #y[i,j,r,sp,2,g]~dbin(p[j,r],N2[i,j,r,sp,g])
               #p[i,j,r,sp,g]<-exp(lp[i,j,r,sp,g])/(1+exp(lp[i,j,r,sp,g]))
               #lp[i,j,r,sp,g]<-mu.p[r,sp]#+alpha.p[i,r]
                }}}}}
@@ -97,8 +97,9 @@ win.data<-list(y=y,
 inits<-function(){list(mu=array(rnorm(16,0,0.01),dim=c(4,2,2)),
                        sd.alpha=array(runif(16,0,4),dim=c(4,2,2)),
                        sd.eps=array(runif(16,0,4),dim=c(4,2,2)),
-                       mu.p=array(rnorm(8,0,0.01),dim=c(4,2)),sd.p=runif(4,0,3),N=N,
-                       beta=array(rnorm(96,0,0.01),dim=c(4,6,2,2)))}
+                       #mu.p=array(rnorm(8,0,0.01),dim=c(4,2)),sd.p=runif(4,0,3),N=N,
+                       beta=array(rnorm(96,0,0.01),dim=c(4,6,2,2)),
+                       N=N)}
 
 params<-c("tot.pop","mu","sd.eps","mu.p","beta")
 
