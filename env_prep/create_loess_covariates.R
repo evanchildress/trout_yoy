@@ -112,11 +112,11 @@ env.cov<-function(covariate, month, threshold=NA,
 }
 
 
-covariates<-array(dim=c(length(unique(year(edLoess$date)))-1,
+covariates<-array(dim=c(end_year-start_year+1,
                         4,
                         length(names(covariate_inputs))))
 
-dimnames(covariates)<-list(unique(year(edLoess$date))[-1],
+dimnames(covariates)<-list(start_year:end_year,
                            unique(edLoess$rivers),
                            names(covariate_inputs))
 

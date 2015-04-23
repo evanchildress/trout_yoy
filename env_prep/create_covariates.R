@@ -1,38 +1,40 @@
 covariate_inputs<-list(fall_discharge = list(covariate = "discharge",
-                                             month = 10:12,
-                                             FUN = median),
-                       spring_floods =  list(covariate = "discharge",
-                                             threshold = 0.99,
-                                             high.low = "high",
-                                             freq.dur = "duration",
-                                             month = 2:3),
+                                             month     = 10:12,
+                                             FUN       = median),
                        winter_floods =  list(covariate = "discharge",
                                              threshold = 0.99,
-                                             high.low = "high",
-                                             freq.dur = "duration",
+                                             high.low  = "high",
+                                             freq.dur  = "duration",
                                              month = c(12,1)),
+                       spring_floods =  list(covariate = "discharge",
+                                             threshold = 0.99,
+                                             high.low  = "high",
+                                             freq.dur  = "duration",
+                                             month = 2:3),
                        summer_low =     list(covariate = "discharge",
-                                             threshold = 0.05,
-                                             high.low = "low",
-                                             freq.dur = "duration",
-                                             month = 6:9),
+                                             month     = 6:9,
+                                             FUN       = min),
+#                                              threshold = 0.05,
+#                                              high.low  = "low",
+#                                              freq.dur  = "duration",
+#                                              month     = 6:9),
                        summer_temp =    list(covariate = "temperature",
                                              threshold = 20,
-                                             high.low = "high",
-                                             freq.dur = "duration",
-                                             month = 6:9),
-                       spring_flow_mean =  list(covariate = "discharge",
-                                             month = 2:3,
-                                             FUN = mean),
+                                             high.low  = "high",
+                                             freq.dur  = "duration",
+                                             month     = 6:9),
                        winter_flow_mean =  list(covariate = "discharge",
-                                             month = c(12,1),
-                                             FUN = mean),
+                                                month     = c(12,1),
+                                                FUN       = mean),
+                       spring_flow_mean =  list(covariate = "discharge",
+                                                month     = 2:3,
+                                                FUN       = mean),
                        summer_flow_mean =  list(covariate = "discharge",
-                                           month = c(6:8),
-                                           FUN = mean),
+                                                month     = c(6:8),
+                                                FUN       = mean),
                        summer_temp_mean =  list(covariate = "temperature",
-                                           month = c(6:8),
-                                           FUN = mean)
+                                                month     = c(6:8),
+                                                FUN       = mean)
 )
 
 env.cov<-function(covariate,month,threshold=NA,high.low=NA,freq.dur=NA,FUN=NULL){
@@ -93,7 +95,7 @@ env.cov<-function(covariate,month,threshold=NA,high.low=NA,freq.dur=NA,FUN=NULL)
                                                     length(which(get(covariate) <= limit[r]))),
                                              by=year_of_effect]$V1
     }
-  }} else{ #if FUN isn't nothing
+  }} else{ #if FUN isn't null
     
     for(r in 1:4){
       result[,r]<-ed[river == rivers[r] & month(date) %in% month,
@@ -111,8 +113,8 @@ env.cov<-function(covariate,month,threshold=NA,high.low=NA,freq.dur=NA,FUN=NULL)
 }
 
 
-covariates<-array(dim=c(length(unique(year(ed$date)))-1,4,length(names(covariate_inputs))))
-dimnames(covariates)<-list(unique(year(ed$date))[-1],
+covariates<-array(dim=c(end_year-start_year+1,4,length(names(covariate_inputs))))
+dimnames(covariates)<-list(start_year:end_year,
                            unique(ed$rivers),
                            names(covariate_inputs))
 

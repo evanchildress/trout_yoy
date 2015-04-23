@@ -14,8 +14,8 @@ do <- list(
   env_prep = c(
     'load_data.R',
     'add_early_trib_predictions.R',
-    'create_covariates.R',
-    'create_loess_covariates.R'
+    'create_covariates.R'
+    #,'create_loess_covariates.R' #not functional
     )
 )
 

@@ -1,0 +1,13 @@
+model{
+  beta~dnorm(0,0.1)
+  mu~dnorm(0,0.1)
+
+  for(i in 1:20){
+    n[i]~dpois(lambda[i])
+    log(lambda[i])<-beta*covariate[i]+mu
+  }
+
+  for(i in 1:20){
+    bla[i]~dbin(0.5,n[i])
+  }
+}

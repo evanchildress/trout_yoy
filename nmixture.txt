@@ -34,11 +34,11 @@ model{
   }}}
 
   #Observation process
-  for(sp in 1:2){
-    for(r in 1:4){
-      mu.p[r,sp]~dnorm(0,0.01)
-    }
-  }
+#   for(sp in 1:2){
+#     for(r in 1:4){
+#       mu.p[r,sp]~dnorm(0,0.01)
+#     }
+#   }
   
   #Likelihood for yoy
   for(g in 1:2){
@@ -47,11 +47,19 @@ model{
         for(j in 1:nsamples){
           for(i in 1:nsections[r]){
             N[i,j,r,sp,g]~dpois(lambda[i,j,r,sp,g])
-              log(lambda[i,j,r,sp,g])<-mu[r,sp,g]+ alpha[i,r,sp,g]+eps[j,r,sp,g]+
-                                       beta[r,1,sp,g]*covariates[j,r,1]+
-                                       beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]+
-                                       beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]+
-                                       beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]
+              log(lambda[i,j,r,sp,g])<-mu[r,sp,g]+ alpha[i,r,sp,g]+eps[j,r,sp,g]
+                                       +beta[r,1,sp,g]*covariates[j,r,1]
+
+                                       #extreme covariates (either this or the means one should be commented out)
+                                       +beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]#winter and spring high flow extremes
+                                       +beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]#summer low flow and temp
+                                       +beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]#summer low flow/temp interaction
+              
+                                       #mean covariates
+#                                        +beta[r,2,sp,g]*covariates[j,r,6]+beta[r,3,sp,g]*covariates[j,r,7]#winter and spring mean flow
+#                                        +beta[r,4,sp,g]*covariates[j,r,8]+beta[r,5,sp,g]*covariates[j,1,9]#summer mean flow and temp
+#                                        +beta[r,6,sp,g]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
+
 
               #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
               y[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
@@ -66,5 +74,25 @@ model{
       for(r in 1:4){
         for(j in 1:nsamples){
           tot.pop[j,r,sp,g]<-sum(N[1:nsections[r],j,r,sp,g])
-  }}}}
+           
+
+            for(i in 1:nsections[r]){
+                 yExp[i,j,r,sp,g]<- N[i,j,r,sp,g]*p[j,r]
+                 E[i,j,r,sp,g]<-pow((y[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
+                                  (yExp[i,j,r,sp,g]+0.5)
+
+                 yNew[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+                 ENew[i,j,r,sp,g]<-pow((yNew[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
+                                        (yExp[i,j,r,sp,g]+0.5)
+            }
+  
+      }}
+    fit[sp,g]<-sum(E[1:nsections[1],,1,sp,g])+sum(E[1:nsections[2],,2,sp,g])+
+                 sum(E[1:nsections[3],,3,sp,g])+sum(E[1:nsections[4],,4,sp,g])
+    fitNew[sp,g]<-sum(ENew[1:nsections[1],,1,sp,g])+sum(ENew[1:nsections[2],,2,sp,g])+
+                 sum(ENew[1:nsections[3],,3,sp,g])+sum(ENew[1:nsections[4],,4,sp,g])
+  }}
+
+
+
 }

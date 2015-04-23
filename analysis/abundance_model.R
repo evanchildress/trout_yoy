@@ -3,9 +3,15 @@ data_root<-"~/process-data/data_store/processed_data"
 load(file.path(data_root,"abundance_arrays.rDATA"))
 
 detection<-readRDS(file.path(data_root,"detectionFromCJS.rds"))
-covariates<-readRDS(file.path(data_root,"covariates.rds"))
-covariates[1,,9]<-0
+covariates<-readRDS(file.path(data_root,"covariates.rds")) #load previously 
 
+
+
+sumTempMean<-data.table(covariates[,,9])
+sumTempFill<-lm(V4~V3+V2+V1,data=sumTempMean)
+covariates[6:9,4,9]<-predict(sumTempFill,data.frame(sumTempMean[6:9,list(V3,V2,V1)]))
+rm(sumTempMean)
+rm(sumTempFill)
 nsections<-c(14,14,15,47)
 
 y<-y[,3:15,,,]
@@ -53,11 +59,11 @@ cat("model{
   }}}
 
   #Observation process
-  for(sp in 1:2){
-    for(r in 1:4){
-      mu.p[r,sp]~dnorm(0,0.01)
-    }
-  }
+#   for(sp in 1:2){
+#     for(r in 1:4){
+#       mu.p[r,sp]~dnorm(0,0.01)
+#     }
+#   }
   
   #Likelihood for yoy
   for(g in 1:2){
@@ -66,11 +72,19 @@ cat("model{
         for(j in 1:nsamples){
           for(i in 1:nsections[r]){
             N[i,j,r,sp,g]~dpois(lambda[i,j,r,sp,g])
-              log(lambda[i,j,r,sp,g])<-mu[r,sp,g]+ alpha[i,r,sp,g]+eps[j,r,sp,g]+
-                                       beta[r,1,sp,g]*covariates[j,r,1]+
-                                       beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]+
-                                       beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]+
-                                       beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]
+              log(lambda[i,j,r,sp,g])<-mu[r,sp,g]+ alpha[i,r,sp,g]+eps[j,r,sp,g]
+                                       +beta[r,1,sp,g]*covariates[j,r,1]
+
+                                       #extreme covariates (either this or the means one should be commented out)
+                                       +beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]#winter and spring high flow extremes
+                                       +beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]#summer low flow and temp
+                                       +beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]#summer low flow/temp interaction
+              
+                                       #mean covariates
+#                                        +beta[r,2,sp,g]*covariates[j,r,6]+beta[r,3,sp,g]*covariates[j,r,7]#winter and spring mean flow
+#                                        +beta[r,4,sp,g]*covariates[j,r,8]+beta[r,5,sp,g]*covariates[j,1,9]#summer mean flow and temp
+#                                        +beta[r,6,sp,g]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
+
 
               #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
               y[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
@@ -85,7 +99,27 @@ cat("model{
       for(r in 1:4){
         for(j in 1:nsamples){
           tot.pop[j,r,sp,g]<-sum(N[1:nsections[r],j,r,sp,g])
-  }}}}
+           
+
+            for(i in 1:nsections[r]){
+                 yExp[i,j,r,sp,g]<- N[i,j,r,sp,g]*p[j,r]
+                 E[i,j,r,sp,g]<-pow((y[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
+                                  (yExp[i,j,r,sp,g]+0.5)
+
+                 yNew[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+                 ENew[i,j,r,sp,g]<-pow((yNew[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
+                                        (yExp[i,j,r,sp,g]+0.5)
+            }
+  
+      }}
+    fit[sp,g]<-sum(E[1:nsections[1],,1,sp,g])+sum(E[1:nsections[2],,2,sp,g])+
+                 sum(E[1:nsections[3],,3,sp,g])+sum(E[1:nsections[4],,4,sp,g])
+    fitNew[sp,g]<-sum(ENew[1:nsections[1],,1,sp,g])+sum(ENew[1:nsections[2],,2,sp,g])+
+                 sum(ENew[1:nsections[3],,3,sp,g])+sum(ENew[1:nsections[4],,4,sp,g])
+  }}
+
+
+
 }",file="nmixture.txt")
 
 win.data<-list(y=y,
@@ -101,11 +135,11 @@ inits<-function(){list(mu=array(rnorm(16,0,0.01),dim=c(4,2,2)),
                        beta=array(rnorm(96,0,0.01),dim=c(4,6,2,2)),
                        N=N)}
 
-params<-c("tot.pop","mu","sd.eps","mu.p","beta")
+params<-c("tot.pop","mu","sd.eps","beta","fit","fitNew")
 
-ni=15000
-nt=10
-nb=10000
+ni=10000
+nt=5
+nb=7000
 nc=3
 
 #out<-bugs(win.data,inits,params,"nmixture.txt",n.chains=nc,n.iter=ni,
@@ -116,14 +150,21 @@ saveRDS(out,file="~/trout_yoy/results/model_output.rds")
 
 out.mcmc<-as.mcmc(out)
 
+
+
+
 #windows()
 #par(mfrow=c(5,6))
 #plot(out.mcmc,density=F,auto.layout=T,ask=T)
 
-popEst<-apply(out$BUGSoutput$sims.list$tot.pop,c(2,3,4,5),mean)
-dimnames(popEst)<-list(c(2002:2014),c("jimmy","mitchell","obear","west"),c("bkt","bnt"),c("yoy","adult"))
-popEst<-data.table(melt(popEst))
-setnames(popEst,c("year","river","species","age","abundance"))
+popEst<-data.table(melt(out$BUGSoutput$sims.list$tot.pop))
+setnames(popEst,c("sim","year","river","species","age","estimate"))
+setkey(popEst,species,age,year)
+popEst<-popEst[,list(round(mean(estimate),3),round(quantile(estimate,probs=0.025),3),
+                   round(quantile(estimate,probs=0.975),3)),
+             by=list(species,age,river,year)]
+setnames(popEst,c("V1","V2","V3"),c("mean","lower","upper"))
+popEst[,year:=year+2001]
 
 betas<-data.table(melt(out$BUGSoutput$sims.list$beta))
 setnames(betas,c("sim","river","beta","species","age","estimate"))
@@ -178,24 +219,47 @@ dev.off()
 
 
 #windows()
-
-tiff.par("~/trout_yoy/results/figures/population_estimates.tif",width=6.5,height=6.5,mar=c(1.7,3.1,0.5,0),mgp=c(2.2,0.5,0),
-         mfrow=c(4,1))
-
 for(g in 1:2){
   for(sp in 1:2){
-    plot(NA,xlim=c(2000,2014),ylim=c(0,637),ylab="Abundance",xlab="",
-         main=paste(unique(popEst$age)[g],unique(popEst$species)[sp]),bty='l')
-    if(g==1&sp==1){legend(2005.5,550,c("J","M","O'B","WB"),lty=1,pch=19,col=palette()[1:4],bty='n')
-      }
-    
+tiff.par(paste0("~/trout_yoy/results/figures/population_estimates_",
+                age[g],species[sp],".tif"),
+         width=6.5,height=6.5,
+         mar=c(1.7,3.1,1,0),mgp=c(2.2,0.5,0),
+         mfrow=c(4,1))
+
     for(r in 1:4){
-      points(abundance~year,data=popEst[river==unique(river)[r]&species==unique(species)[sp]&age==unique(age)[g],],
-       type='b',pch=19,lty=g,col=palette()[r])
-}}}
+      ylimit<-c(0,popEst[river   == unique(river)[r]&
+                         species == unique(species)[sp]&
+                         age     == unique(age)[g],
+                         max(upper)+10])
+      plot(mean~year,main=get("river",env=.GlobalEnv)[r],
+           data=popEst[river   == unique(river)[r]&
+                       species == unique(species)[sp]&
+                       age     == unique(age)[g]
+                                 ],
+           type='b',
+           pch=19,
+           lty=1,
+           col=palette()[r],
+           ylim=ylimit)
+      
+      with(popEst[river   == unique(river)[r]&
+                  species == unique(species)[sp]&
+                  age     == unique(age)[g]
+                  ],
+           error.bar(year,mean,upper.y=upper,lower.y=lower,interval.type="addota"))
+    }
+      dev.off()
+  }
+}
 
 
-dev.off()
+plot(out$BUGSoutput$sims.list$fitNew~out$BUGSoutput$sims.list$fit,
+     xlab="Discrepancy Actual Data",ylab="Discrepancy Replicated Data",
+     bty='l')
+abline(0,1,lwd=2)
+mean(out$BUGSoutput$sims.list$fitNew>out$BUGSoutput$sims.list$fit)
+mean(out$BUGSoutput$sims.list$fitNew<out$BUGSoutput$sims.list$fit)
 
 #plot(envPred[,1,4]~c(2002:2014),type='b',col='blue',pch=19,lwd=2,ylim=c(-2,2.5))
 #points(envPred[,2,4]~c(2002:2014),type='b',col='pink',pch=19,lwd=2)
