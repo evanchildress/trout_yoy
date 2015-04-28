@@ -31,10 +31,9 @@ cat("model{
       for(r in 1:4){
         mu[r,sp,g]~dnorm(0,0.01) #grand mean
   
-   for(f in 1:6){
-    beta[r,f,sp,g]~dnorm(0,0.01)
-   }
-  }}}
+  for(f in 1:6){
+  beta[r,f,sp,g]~dnorm(0,0.01)
+  }}}}
 
 
   #Random section effect
@@ -49,31 +48,91 @@ cat("model{
   }}}
   
   #Random year effect
-  for(g in 1:2){
+#   for(g in 1:2){
+
     for(sp in 1:2){  
       for(r in 1:4){
         for(j in 1:nsamples){
-          eps[j,r,sp,g]~dnorm(0,tau.eps[r,g,sp])
+          eps[j,r,sp,2]~dnorm(0,tau.eps[r,2,sp])
         }
-        tau.eps[r,sp,g]<-pow(sd.eps[r,g,sp],-2)
-        sd.eps[r,sp,g]~dunif(0,5)
-  }}}
+        tau.eps[r,sp,2]<-pow(sd.eps[r,2,sp],-2)
+        sd.eps[r,sp,2]~dunif(0,5)
+  }}
 
+    for(sp in 1:2){  
+      for(r in 1:4){
+        for(j in 1:nsamples){
+          eps[j,r,sp,1]~dnorm(0,tau.eps[r,1,sp])
+        }
+        tau.eps[r,sp,1]<-pow(sd.eps[r,1,sp],-2)
+        sd.eps[r,sp,1]~dunif(0,5)
+  }}
+
+
+  #Initial year for yoy
+  for(sp in 1:2){
+    for(r in 1:4){
+      for(i in 1:nsections[r]){
+        logLambdaI[i,r,sp]~dnorm(0,0.01)
+        lambdaI[i,r,sp]<-exp(logLambdaI[i,r,sp])
+      }
+    }
+  }
   #Observation process
 #   for(sp in 1:2){
 #     for(r in 1:4){
 #       mu.p[r,sp]~dnorm(0,0.01)
 #     }
 #   }
-  
-  #Likelihood for yoy
-  for(g in 1:2){
+ 
+  #Likelihood for adults
+  for(g in 2:2){
     for(sp in 1:2){
       for(r in 1:4){
         for(j in 1:nsamples){
           for(i in 1:nsections[r]){
             N[i,j,r,sp,g]~dpois(lambda[i,j,r,sp,g])
               log(lambda[i,j,r,sp,g])<-mu[r,sp,g]+ alpha[i,r,sp,g]+eps[j,r,sp,g]
+
+                                       +beta[r,1,sp,g]*covariates[j,r,1]
+
+                                       #extreme covariates (either this or the means one should be commented out)
+                                       +beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]#winter and spring high flow extremes
+                                       +beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]#summer low flow and temp
+                                       +beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]#summer low flow/temp interaction
+              
+                                       #mean covariates
+#                                        +beta[r,2,sp,g]*covariates[j,r,6]+beta[r,3,sp,g]*covariates[j,r,7]#winter and spring mean flow
+#                                        +beta[r,4,sp,g]*covariates[j,r,8]+beta[r,5,sp,g]*covariates[j,1,9]#summer mean flow and temp
+#                                        +beta[r,6,sp,g]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
+
+
+              #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
+              y[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+              #y[i,j,r,sp,2,g]~dbin(p[j,r],N2[i,j,r,sp,g])
+              #p[i,j,r,sp,g]<-exp(lp[i,j,r,sp,g])/(1+exp(lp[i,j,r,sp,g]))
+              #lp[i,j,r,sp,g]<-mu.p[r,sp]#+alpha.p[i,r]
+               }}}}}
+
+  #Likelihood for first yoy year
+    for(sp in 1:2){
+      for(r in 1:4){
+        for(i in 1:nsections[r]){
+             N[i,1,r,sp,1]~dpois(lambdaI[i,r,sp])
+             y[i,1,r,sp,1]~dbin(p[1,r],N[i,1,r,sp,1])
+        }
+      }
+    }
+
+  #Likelihood for yoy
+  for(g in 1:1){
+    for(sp in 1:2){
+      for(r in 1:4){
+        for(j in 2:nsamples){
+          for(i in 1:nsections[r]){
+            N[i,j,r,sp,g]~dpois(lambda[i,j,r,sp,g])
+              log(lambda[i,j,r,sp,g])<-mu[r,sp,g]+ alpha[i,r,sp,g]+eps[j,r,sp,g]
+                                       +c[r,sp,g]*N[i,j-1,r,sp,2]
                                        +beta[r,1,sp,g]*covariates[j,r,1]
 
                                        #extreme covariates (either this or the means one should be commented out)
@@ -112,12 +171,12 @@ cat("model{
                                         (yExp[i,j,r,sp,g]+0.5)
             }
   
-      }
-    fit[r,sp,g]<-sum(E[1:nsections[r],,r,sp,g])
-    fitNew[r,sp,g]<-sum(ENew[1:nsections[r],,r,sp,g])
-      }
-    }
-  }
+      }}
+    fit[sp,g]<-sum(E[1:nsections[1],,1,sp,g])+sum(E[1:nsections[2],,2,sp,g])+
+                 sum(E[1:nsections[3],,3,sp,g])+sum(E[1:nsections[4],,4,sp,g])
+    fitNew[sp,g]<-sum(ENew[1:nsections[1],,1,sp,g])+sum(ENew[1:nsections[2],,2,sp,g])+
+                 sum(ENew[1:nsections[3],,3,sp,g])+sum(ENew[1:nsections[4],,4,sp,g])
+  }}
 
 
 
@@ -136,7 +195,7 @@ inits<-function(){list(mu=array(rnorm(16,0,0.01),dim=c(4,2,2)),
                        beta=array(rnorm(96,0,0.01),dim=c(4,6,2,2)),
                        N=N)}
 
-params<-c("tot.pop","mu","sd.eps","beta","fit","fitNew",'tau.alpha','sd.alpha')
+params<-c("tot.pop","mu","sd.eps","beta","fit","fitNew")
 
 ni=10000
 nt=5
@@ -149,7 +208,7 @@ out<-jags(win.data,inits,params,"nmixture.txt",n.chains=nc,n.iter=ni,
           n.thin=nt,n.burnin=nb,working.directory=getwd())
 saveRDS(out,file="~/trout_yoy/results/model_output.rds")
 
-sims<-out$BUGSoutput$sims.list
+out.mcmc<-as.mcmc(out)
 
 
 
@@ -158,7 +217,7 @@ sims<-out$BUGSoutput$sims.list
 #par(mfrow=c(5,6))
 #plot(out.mcmc,density=F,auto.layout=T,ask=T)
 
-popEst<-data.table(melt(sims$tot.pop))
+popEst<-data.table(melt(out$BUGSoutput$sims.list$tot.pop))
 setnames(popEst,c("sim","year","river","species","age","estimate"))
 setkey(popEst,species,age,year)
 popEst<-popEst[,list(round(mean(estimate),3),round(quantile(estimate,probs=0.025),3),
@@ -167,7 +226,7 @@ popEst<-popEst[,list(round(mean(estimate),3),round(quantile(estimate,probs=0.025
 setnames(popEst,c("V1","V2","V3"),c("mean","lower","upper"))
 popEst[,year:=year+2001]
 
-betas<-data.table(melt(sims$beta))
+betas<-data.table(melt(out$BUGSoutput$sims.list$beta))
 setnames(betas,c("sim","river","beta","species","age","estimate"))
 setkey(betas,beta,species,age)
 betas<-betas[,list(round(mean(estimate),3),round(quantile(estimate,probs=0.025),3),
@@ -254,17 +313,13 @@ tiff.par(paste0("~/trout_yoy/results/figures/population_estimates_",
   }
 }
 
-tiff.par("results/figures/posteriorPredictiveCheck.tif")
-plot(sims$fitNew[,,1,1]~sims$fit[,,1,1],
+
+plot(out$BUGSoutput$sims.list$fitNew~out$BUGSoutput$sims.list$fit,
      xlab="Discrepancy Actual Data",ylab="Discrepancy Replicated Data",
      bty='l')
-for(r in 1:4){
-  points(sims$fitNew[,r,1,1]~sims$fit[,r,1,1],col=palette()[r])
-}
 abline(0,1,lwd=2)
-text(200,300,paste0("YOY BKT Bayesian P = ",
-                    round(mean(sims$fitNew[,,1,1]>sims$fit[,,1,1]),3)))
-dev.off()
+mean(out$BUGSoutput$sims.list$fitNew>out$BUGSoutput$sims.list$fit)
+mean(out$BUGSoutput$sims.list$fitNew<out$BUGSoutput$sims.list$fit)
 
 #plot(envPred[,1,4]~c(2002:2014),type='b',col='blue',pch=19,lwd=2,ylim=c(-2,2.5))
 #points(envPred[,2,4]~c(2002:2014),type='b',col='pink',pch=19,lwd=2)
