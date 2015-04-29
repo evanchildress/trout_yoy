@@ -52,14 +52,14 @@ model{
                                        +beta[r,1,sp,g]*covariates[j,r,1]
 
                                        #extreme covariates (either this or the means one should be commented out)
-#                                        +beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]#winter and spring high flow extremes
-#                                        +beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]#summer low flow and temp
-#                                        +beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]#summer low flow/temp interaction
-#               
+                                       +beta[r,2,sp,g]*covariates[j,r,2]+beta[r,3,sp,g]*covariates[j,r,3]#winter and spring high flow extremes
+                                       +beta[r,4,sp,g]*covariates[j,r,4]+beta[r,5,sp,g]*covariates[j,1,5]#summer low flow and temp
+                                       +beta[r,6,sp,g]*covariates[j,r,4]*covariates[j,r,5]#summer low flow/temp interaction
+              
                                        #mean covariates
-                                       +beta[r,2,sp,g]*covariates[j,r,6]+beta[r,3,sp,g]*covariates[j,r,7]#winter and spring mean flow
-                                       +beta[r,4,sp,g]*covariates[j,r,8]+beta[r,5,sp,g]*covariates[j,1,9]#summer mean flow and temp
-                                       +beta[r,6,sp,g]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
+#                                        +beta[r,2,sp,g]*covariates[j,r,6]+beta[r,3,sp,g]*covariates[j,r,7]#winter and spring mean flow
+#                                        +beta[r,4,sp,g]*covariates[j,r,8]+beta[r,5,sp,g]*covariates[j,1,9]#summer mean flow and temp
+#                                        +beta[r,6,sp,g]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
 
 
               #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]

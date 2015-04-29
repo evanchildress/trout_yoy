@@ -1,6 +1,8 @@
-tribs<-data.table(dbGetQuery(link$conn,"SELECT * FROM tags_tribs_wb WHERE species = 'bkt' OR species = 'bnt';"))
+tribs<-data.table(dbGetQuery(link$conn,
+       "SELECT * FROM tags_tribs_wb WHERE species = 'bkt' OR species = 'bnt' OR species = 'ats';"))
 tribs[,line_number:=NULL]
-trout<-data.table(dbGetQuery(link$conn,"SELECT * FROM tags_trout_wb WHERE species = 'bkt' OR species = 'bnt';"))
+trout<-data.table(dbGetQuery(link$conn,
+        "SELECT * FROM tags_trout_wb WHERE species = 'bkt' OR species = 'bnt' OR species = 'ats';"))
 setnames(trout,tolower(names(trout)))
 trout<-rbind(trout,tribs)
 rm(tribs)
