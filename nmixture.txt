@@ -63,7 +63,7 @@ model{
 
 
               #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
-              y[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+              y[i,j,r,sp,g]~dbin(p[j,r,sp],N[i,j,r,sp,g])
               #y[i,j,r,sp,2,g]~dbin(p[j,r],N2[i,j,r,sp,g])
               #p[i,j,r,sp,g]<-exp(lp[i,j,r,sp,g])/(1+exp(lp[i,j,r,sp,g]))
               #lp[i,j,r,sp,g]<-mu.p[r,sp]#+alpha.p[i,r]
@@ -78,11 +78,11 @@ model{
            
 
             for(i in 1:nsections[r]){
-                 yExp[i,j,r,sp,g]<- N[i,j,r,sp,g]*p[j,r]
+                 yExp[i,j,r,sp,g]<- N[i,j,r,sp,g]*p[j,r,sp]
                  E[i,j,r,sp,g]<-pow((y[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
                                   (yExp[i,j,r,sp,g]+0.5)
 
-                 yNew[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+                 yNew[i,j,r,sp,g]~dbin(p[j,r,sp],N[i,j,r,sp,g])
                  ENew[i,j,r,sp,g]<-pow((yNew[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
                                         (yExp[i,j,r,sp,g]+0.5)
             }

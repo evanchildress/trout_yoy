@@ -2,7 +2,24 @@ data_root<-"~/process-data/data_store/processed_data"
 
 load(file.path(data_root,"abundance_arrays.rDATA"))
 
-detection<-readRDS(file.path(data_root,"detectionFromCJS.rds"))
+# detection<-readRDS(file.path(data_root,"detectionFromCJS.rds"))
+# detection<-detection[3,,1:4]
+
+bktDetect<-readRDS(file.path("~/westbrookJS/results/pAdult.rds"))
+bktDetect<-acast(melt(bktDetect[season==3,list(year,river,mean)],
+                      id.vars=c("river","year")),
+                 year~river)
+bktDetect<-bktDetect[2:14,]
+
+bntDetect<-readRDS(file.path("~/westbrookJS/resultsBnt/pAdult.rds"))
+bntDetect<-acast(melt(bntDetect[season==3,list(year,river,mean)],
+                      id.vars=c("river","year")),
+                 year~river)
+bntDetect<-bntDetect[2:14,]
+
+detection<-array(c(bktDetect,bntDetect),
+                 c(nrow(bktDetect),4,2))
+
 covariates<-readRDS(file.path(data_root,"covariates.rds")) #load env covariates created in README
 
 
@@ -88,7 +105,7 @@ cat("model{
 
 
               #N2[i,j,r,sp,g]<-N[i,j,r,sp,g]-y[i,j,r,sp,1,g]
-              y[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+              y[i,j,r,sp,g]~dbin(p[j,r,sp],N[i,j,r,sp,g])
               #y[i,j,r,sp,2,g]~dbin(p[j,r],N2[i,j,r,sp,g])
               #p[i,j,r,sp,g]<-exp(lp[i,j,r,sp,g])/(1+exp(lp[i,j,r,sp,g]))
               #lp[i,j,r,sp,g]<-mu.p[r,sp]#+alpha.p[i,r]
@@ -103,11 +120,11 @@ cat("model{
            
 
             for(i in 1:nsections[r]){
-                 yExp[i,j,r,sp,g]<- N[i,j,r,sp,g]*p[j,r]
+                 yExp[i,j,r,sp,g]<- N[i,j,r,sp,g]*p[j,r,sp]
                  E[i,j,r,sp,g]<-pow((y[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
                                   (yExp[i,j,r,sp,g]+0.5)
 
-                 yNew[i,j,r,sp,g]~dbin(p[j,r],N[i,j,r,sp,g])
+                 yNew[i,j,r,sp,g]~dbin(p[j,r,sp],N[i,j,r,sp,g])
                  ENew[i,j,r,sp,g]<-pow((yNew[i,j,r,sp,g]-yExp[i,j,r,sp,g]),2)/
                                         (yExp[i,j,r,sp,g]+0.5)
             }
@@ -127,7 +144,7 @@ win.data<-list(y=y,
                nsamples=dim(y)[2],
                nsections=nsections,
                covariates=covariates,
-               p=detection[3,,1:4])
+               p=detection)
 
 inits<-function(){list(mu=array(rnorm(16,0,0.01),dim=c(4,2,2)),
                        sd.alpha=array(runif(16,0,4),dim=c(4,2,2)),

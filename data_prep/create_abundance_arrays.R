@@ -1,30 +1,46 @@
 nsections<-c(14,14,15,47)
+trout<-trout[species %in% c('bkt','bnt')]
+# sample_dates<-trout[,median(date),by=sample_name]
+# setnames(sample_dates,"V1","median_sample_date")
+# 
+# season_breaks<-dbGetQuery(link$conn,"SELECT * FROM season_data")
+# 
+# season<-function(date){ 
+#             length(which(strftime(date, format="%j") >= season_breaks$end_julian_day))+1
+# }
+# for(i in 1:nrow(sample_dates)){
+# sample_dates[i,season:=season(median_sample_date)]
+# }
 
-sample_dates<-trout[,median(date),by=sample_name]
-setnames(sample_dates,"V1","median_sample_date")
-
-season_breaks<-dbGetQuery(link$conn,"SELECT * FROM season_data")
-
-season<-function(date){ 
-            length(which(strftime(date, format="%j") >= season_breaks$end_julian_day))+1
-}
-for(i in 1:nrow(sample_dates)){
-sample_dates[i,season:=season(median_sample_date)]
-}
+sampleNames<-readRDS(file.path(data_root,"sampleNames.rds"))
+sampleNames[,sample_name:=as.character(sample_name)]
+sampleNames<-sampleNames[drainage=='west',list(sample_name,season)]
+sampleNames[sample_name=="89",season:="PostSmolt"]
 
 
+
+setkey(trout,sample_name)
+setkey(sampleNames,sample_name)
+
+trout<-sampleNames[trout]
+trout<-trout[season!="Summer"]
+
+trout[,season:=as.numeric(factor(trout$season,
+                                 levels=c("PreSmolt","PostSmolt","Fall","PreWinter"),
+                                 ordered=T))]
+trout[,year:=year(date)]
 
 abund.array<-function(data,season_set=3,age_class){
   if(age_class=="adult"){                                     
-    data_subset<-data[cohort!=year(date) & sample_name %in% sample_dates[season==season_set,sample_name]]
+    data_subset<-data[cohort!=year & season==season_set]
   }
   
   if(age_class=="yoy"){                                     
-    data_subset<-data[cohort==year(date) & sample_name %in% sample_dates[season==season_set,sample_name]]
+    data_subset<-data[cohort==year & season==season_set]
   }
   
-  abund_array<-acast(melt(data_subset[,length(tag),by=c("species","sample_name","section","river")],
-                          id=c("species","sample_name","section","river")),as.numeric(section)~sample_name~river~species)
+  abund_array<-acast(melt(data_subset[,length(tag),by=c("species","year","section","river")],
+                          id=c("species","year","section","river")),as.numeric(section)~year~river~species)
   
   abund_array[is.na(abund_array)]<-0
   rivers<-unique(data$river)[order(unique(data$river))]
@@ -35,7 +51,7 @@ abund.array<-function(data,season_set=3,age_class){
     abund_array[(nsections[r]+1):dim(abund_array)[1],,rivers[r],]<-NA
   }
   
-  abund_array[,c("30","36"),rivers[1:3],]<-NA
+  #abund_array[,c("30","36"),rivers[1:3],]<-NA
   
   return(abund_array)
 }

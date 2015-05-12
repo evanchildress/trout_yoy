@@ -1,6 +1,11 @@
+bla<-NULL
 data_root<-"~/process-data/data_store/processed_data"
 
-yoy_bins<-readRDS(file.path(data_root,"yoy_bins.rds"))
+yoy_bins<-data.table(dbGetQuery(link$conn,"SELECT * FROM yoy_bins"))
+setnames(yoy_bins,tolower(names(yoy_bins)))
+yoy_bins[,cohort_min_length:=as.numeric(cohort_min_length)]
+yoy_bins[,cohort_max_length:=as.numeric(cohort_max_length)]
+
 
 #hatch_year<-readRDS(file.path(data_root,"hatch_year.rds"))
 #setkey(hatch_year,tag)
@@ -27,11 +32,12 @@ hatch.year.no.tag<-function(Length,Sample,Species,River){
     if(Species== 'bnt' & Sample == 82 & River == 'wb jimmy' & Length>210){River <- 'west brook'} #bigger than assigned bins
     if(Species== 'bnt' & Sample == 91 & River == 'wb mitchell' & Length == 90){return(2014)}
     
-    upper<-yoy_bins[sample==Sample&species==Species&river==River,max_length]
-    lower<-yoy_bins[sample==Sample&species==Species&river==River,min_length]
-    hatch_year<-yoy_bins[sample==Sample&species==Species&river==River,hatch_year][
+    upper<-yoy_bins[sample==Sample&species==Species&river==River,cohort_max_length]
+    lower<-yoy_bins[sample==Sample&species==Species&river==River,cohort_min_length]
+    cohort<-yoy_bins[sample==Sample&species==Species&river==River,cohort][
       intersect(which(Length<=upper),which(Length>=lower))]
-  if(length(hatch_year)>0) {return(as.numeric(hatch_year))} else{
+  if(length(cohort)>1){bla<<-rbind(bla,c(Length,Sample,Species,River,cohort))}
+  if(length(cohort)>0) {return(as.numeric(cohort))} else{
     return(as.numeric(NA))
   }
   }
@@ -55,6 +61,9 @@ trout[is.na(cohort) & !is.na(tag),cohort:=
       by=tag]
 
 trout[is.na(cohort) & grepl('too small to tag',comments),cohort:= year(date)]
+
+assign('bla',bla,env=shared_data)
+print(bla)
 
 if(nrow(trout[is.na(cohort) & !is.na(measured_weight)])>0){
   cohort.from.weight<-function(Weight,Sample,Species,River){
@@ -90,6 +99,7 @@ if(nrow(trout[is.na(cohort) & !is.na(measured_weight)])>0){
 ##This removes all of the fish that weren't assigned a cohort 
 ##because most of these a supposed to be indicators that no fish were caught,
 ##but it produces a warning if there are any that seem like they might be real fish
+
 for(i in 1:nrow(trout[is.na(cohort)])){
   a<-trout[is.na(cohort)][i]
   ab<-trout[river == a$river &
@@ -115,4 +125,3 @@ dbWriteTable(conn=link$conn, name='data_trout',value=trout,overwrite=TRUE,row.na
 trout<-trout[area %in% c("inside","trib")]
 # assign('yoy',yoy,env=shared_data)
 assign('trout',trout,env=shared_data)
- 
