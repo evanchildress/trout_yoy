@@ -1,0 +1,99 @@
+cat("model{
+  #Priors
+  #State process
+
+    for(sp in 1:2){
+      for(r in 1:4){
+        mu[r,sp]~dnorm(0,0.01) #grand mean
+  
+   for(f in 1:6){
+    beta[r,f,sp]~dnorm(0,0.01)
+   }
+  }}
+
+
+  #Random section effect
+
+    for(sp in 1:2){  
+      for(r in 1:4){
+        for(i in 1:nsections[r]){
+          alpha[i,r,sp]~dnorm(0,tau.alpha[r,sp])
+          }
+      tau.alpha[r,sp]<-pow(sd.alpha[r,sp],-2)
+      sd.alpha[r,sp]~dunif(0,5)
+  }}
+  
+  #Random year effect
+
+    for(sp in 1:2){  
+      for(r in 1:4){
+        for(j in 1:nsamples){
+          eps[j,r,sp]~dnorm(0,tau.eps[r,sp])
+        }
+        tau.eps[r,sp]<-pow(sd.eps[r,sp],-2)
+        sd.eps[r,sp]~dunif(0,5)
+  }}
+
+  #Observation process
+#   for(sp in 1:2){
+#     for(r in 1:4){
+#       mu.p[r,sp]~dnorm(0,0.01)
+#     }
+#   }
+  
+  #Likelihood for yoy
+
+    for(sp in 1:2){
+      for(r in 1:4){
+        for(j in 1:nsamples){
+          for(i in 1:nsections[r]){
+            N[i,j,r,sp]~dpois(lambda[i,j,r,sp])
+              log(lambda[i,j,r,sp])<-mu[r,sp]+ alpha[i,r,sp]+eps[j,r,sp]
+                                       +beta[r,1,sp]*covariates[j,r,1]
+
+                                       #extreme covariates (either this or the means one should be commented out)
+                                       +beta[r,2,sp]*covariates[j,r,2]+beta[r,3,sp]*covariates[j,r,3]#winter and spring high flow extremes
+                                       +beta[r,4,sp]*covariates[j,r,4]+beta[r,5,sp]*covariates[j,1,5]#summer low flow and temp
+                                       +beta[r,6,sp]*covariates[j,r,4]*covariates[j,r,5]#summer low flow/temp interaction
+              
+                                       #mean covariates
+#                                        +beta[r,2,sp]*covariates[j,r,6]+beta[r,3,sp]*covariates[j,r,7]#winter and spring mean flow
+#                                        +beta[r,4,sp]*covariates[j,r,8]+beta[r,5,sp]*covariates[j,1,9]#summer mean flow and temp
+#                                        +beta[r,6,sp]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
+
+
+              #N2[i,j,r,sp]<-N[i,j,r,sp]-y[i,j,r,sp,1]
+              y[i,j,r,sp]~dbin(p[j,r,sp],N[i,j,r,sp])
+              #y[i,j,r,sp,2]~dbin(p[j,r],N2[i,j,r,sp])
+              #p[i,j,r,sp]<-exp(lp[i,j,r,sp])/(1+exp(lp[i,j,r,sp]))
+              #lp[i,j,r,sp]<-mu.p[r,sp]#+alpha.p[i,r]
+               }}}}
+  
+  #Derived output
+
+    for(sp in 1:2){
+      for(r in 1:4){
+        for(j in 1:nsamples){
+          tot.pop[j,r,sp]<-sum(N[1:nsections[r],j,r,sp])
+           
+
+            for(i in 1:nsections[r]){
+                 yExp[i,j,r,sp]<- N[i,j,r,sp]*p[j,r,sp]
+                 E[i,j,r,sp]<-pow((y[i,j,r,sp]-yExp[i,j,r,sp]),2)/
+                                  (yExp[i,j,r,sp]+0.5)
+
+                 yNew[i,j,r,sp]~dbin(p[j,r,sp],N[i,j,r,sp])
+                 ENew[i,j,r,sp]<-pow((yNew[i,j,r,sp]-yExp[i,j,r,sp]),2)/
+                                        (yExp[i,j,r,sp]+0.5)
+            }
+  
+      }
+    fit[r,sp]<-sum(E[1:nsections[r],,r,sp])
+    fitNew[r,sp]<-sum(ENew[1:nsections[r],,r,sp])
+      }
+    }
+  
+
+
+
+}",file="abundanceModel.txt")
