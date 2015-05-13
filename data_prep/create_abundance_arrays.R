@@ -62,10 +62,21 @@ adult_abund_fall<-abund.array(trout,season_set=3,age_class='adult')
 y<-array(c(yoy_abund_fall,adult_abund_fall),dim=c(dim(yoy_abund_fall),2))
 dimnames(y)<-c(dimnames(yoy_abund_fall),list(c("yoy","adult")))
 
-save(yoy_abund_fall,adult_abund_fall,y,file=file.path(data_root,"abundance_arrays.rDATA"))
 
+propTagged<-trout[year==cohort & season==3,
+                  length(unique(tag))/(sum(is.na(tag))+length(unique(tag))),
+                  by=list(species,river,year)]
+
+propTagged<-acast(melt(propTagged,id.vars=c("species","river","year")),
+                  year~river~species)
+propTagged[is.na(propTagged)]<-1
+
+save(yoy_abund_fall,adult_abund_fall,y,propTagged,file=file.path(data_root,"abundance_arrays.rDATA"))
+
+assign('propTagged',propTagged,env=shared_data)
+assign('trout',trout,env=shared_data)
 #yoy_fall_array[,,c("wb jimmy","wb mitchell","wb obear"),,2]<-NA
-  
+
 #This section uses the no catch indicators to replace NAs with 0s, which is overriden by the above
 #bad<-NULL
 #bad.array<-NULL
