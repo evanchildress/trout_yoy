@@ -36,8 +36,8 @@ hatch.year.no.tag<-function(Length,Sample,Species,River){
     lower<-yoy_bins[sample==Sample&species==Species&river==River,cohort_min_length]
     cohort<-yoy_bins[sample==Sample&species==Species&river==River,cohort][
       intersect(which(Length<=upper),which(Length>=lower))]
-  if(length(cohort)>1){bla<<-rbind(bla,c(Length,Sample,Species,River,cohort))}
-  if(length(cohort)>0) {return(as.numeric(cohort))} else{
+  if(length(cohort)>1){stop("unable to assign cohort because length matched multiple bins")}
+  if(length(cohort)==1) {return(as.numeric(cohort))} else{
     return(as.numeric(NA))
   }
   }
@@ -62,8 +62,6 @@ trout[is.na(cohort) & !is.na(tag),cohort:=
 
 trout[is.na(cohort) & grepl('too small to tag',comments),cohort:= year(date)]
 
-assign('bla',bla,env=shared_data)
-print(bla)
 
 if(nrow(trout[is.na(cohort) & !is.na(measured_weight)])>0){
   cohort.from.weight<-function(Weight,Sample,Species,River){

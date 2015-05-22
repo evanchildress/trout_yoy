@@ -1,16 +1,17 @@
-model{
+cat("model{
   #Priors
   #State process
-
     for(sp in 1:2){
       for(r in 1:4){
         mu[r,sp]~dnorm(0,0.01) #grand mean
-  
-   for(f in 1:6){
-    beta[r,f,sp]~dnorm(0,0.01)
-   }
-  }}
 
+        for(f in 1:6){
+          beta[r,f,sp]~dnorm(0,0.01)
+        }
+        c0~dunif(0,0.01)
+        c1~dnorm(0,0.01)
+      }
+    }
 
   #Random section effect
 
@@ -18,10 +19,11 @@ model{
       for(r in 1:4){
         for(i in 1:nsections[r]){
           alpha[i,r,sp]~dnorm(0,tau.alpha[r,sp])
-          }
+        }
       tau.alpha[r,sp]<-pow(sd.alpha[r,sp],-2)
       sd.alpha[r,sp]~dunif(0,5)
-  }}
+      }
+    }
   
   #Random year effect
 
@@ -32,7 +34,8 @@ model{
         }
         tau.eps[r,sp]<-pow(sd.eps[r,sp],-2)
         sd.eps[r,sp]~dunif(0,5)
-  }}
+      }
+    }
 
   #Observation process
 #   for(sp in 1:2){
@@ -42,14 +45,16 @@ model{
 #   }
   
   #Likelihood for yoy
-
     for(sp in 1:2){
       for(r in 1:4){
         for(j in 1:nsamples){
           for(i in 1:nsections[r]){
-            N[i,j,r,sp]~dpois(lambda[i,j,r,sp])
-              log(lambda[i,j,r,sp])<-mu[r,sp]+ alpha[i,r,sp]+eps[j,r,sp]
-                                       +beta[r,1,sp]*covariates[j,r,1]
+            N[i,j,r,sp]~dpois(lambda[i,j,r,sp]*A[j-1,r,sp])
+              log(lambda[i,j,r,sp])<-c0[r,sp]
+                                     +c1*A[j-1,r,sp]
+                                     +alpha[i,r,sp]
+                                     +eps[j,r,sp]
+                                     +beta[r,1,sp]*covariates[j,r,1]
 
                                        #extreme covariates (either this or the means one should be commented out)
                                        +beta[r,2,sp]*covariates[j,r,2]+beta[r,3,sp]*covariates[j,r,3]#winter and spring high flow extremes
@@ -67,10 +72,12 @@ model{
               #y[i,j,r,sp,2]~dbin(p[j,r],N2[i,j,r,sp])
               #p[i,j,r,sp]<-exp(lp[i,j,r,sp])/(1+exp(lp[i,j,r,sp]))
               #lp[i,j,r,sp]<-mu.p[r,sp]#+alpha.p[i,r]
-               }}}}
+          }
+        }
+      }
+    }
   
   #Derived output
-
     for(sp in 1:2){
       for(r in 1:4){
         for(j in 1:nsamples){
@@ -87,13 +94,13 @@ model{
                                         (yExp[i,j,r,sp]+0.5)
             }
   
-      }
-    fit[r,sp]<-sum(E[1:nsections[r],,r,sp])
-    fitNew[r,sp]<-sum(ENew[1:nsections[r],,r,sp])
+        }
+        fit[r,sp]<-sum(E[1:nsections[r],,r,sp])
+        fitNew[r,sp]<-sum(ENew[1:nsections[r],,r,sp])
       }
     }
   
 
 
 
-}
+}",file="abundanceModel.txt")

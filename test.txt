@@ -1,27 +1,14 @@
 model{
-  alpha~dnorm(0,1)
-  sd~dunif(0,5)
+  
+  a~dnorm(0,0.000000000001)
+  b~dnorm(0,0.000000000001)
+  c~dnorm(0,0.000000000001)
+  
+  sd~dunif(0,100)
   tau<-pow(sd,-2)
   
-  for(j in 1:10){
-    eps[j]~dnorm(alphaJ,tauJ)
+  for(i in 1:n){
+    y[i]~dnorm(mu[i],tau)
+    mu[i]<-a+b*x[i]+c*pow(x[i],2)
   }
-  alphaJ~dnorm(0,1)
-  sdJ~dunif(0,20)
-  tauJ<-pow(sdJ,-2)
-  
-  alphaInit~dnorm(0,10)
-  tauInit<-pow(sdInit,-2)
-  sdInit~dunif(0,5)
-  
-  for(i in 1:1000){
-    bla[1,i]~dnorm(alphaInit,tauInit)
-  }
-  
-  for(j in 2:10){
-      mu[j]<-eps[j]+alpha
-    for(i in 1:1000){
-      bla[j,i]~dnorm(mu[j],tau)
-    }
-  } 
 }
