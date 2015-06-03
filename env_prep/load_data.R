@@ -51,10 +51,6 @@ ed[['season']] <- sapply(ed[['day_of_year']], day_to_season)
 ed$date<-as.Date(ed$date_ct)
 ed$river<-tolower(ed$river)
 
-## Save cleaned daily data.
-dbWriteTable(conn=link$conn, name='data_environmental', value=ed,
-             row.names=FALSE, overwrite=TRUE, append=FALSE)
-
 edLoess<-data.table(dbGetQuery(conn=link$conn,
               "SELECT * FROM data_environmental_with_zst_zsd"))
 edLoess<-edLoess[,list(river,date_ct,

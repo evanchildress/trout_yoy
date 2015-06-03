@@ -1,59 +1,61 @@
 model{
     #Priors
     #State process
-      for(sp in 1:2){
-        for(r in 1:4){
-          for(f in 1:8){
+      
+        
+          c[1]~dunif(0,50)
+          for(f in 1:5){
   #covariate betas
-            beta[r,f,sp]~dnorm(0,0.0001)
+            beta[f]~dnorm(0,0.01)
           }
-        }
-      }
+         
   
     #Likelihood for yoy
-      for(sp in 1:2){
-        for(r in 1:4){
+      
+        
           for(j in 1:nsamples){
-              N[j,r,sp]~dpois(lambda[j,r,sp]*adultDATA[j,r,sp])
-                log(lambda[j,r,sp])<-
+              N[j]~dpois(lambda[j]*adultDATA[j])
+                log(lambda[j])<-c[1]
 
-                            #environmental covariates
-                            beta[r,1,sp]*covariates[j,r,1]+beta[r,7,sp]*covariates[j,r,1]^2
+                            #environmental covariates (based on pca in west brook)
+                            +beta[1]*covariates[j,1]
+                            +beta[2]*covariates[j,2]
+                            +beta[3]*covariates[j,3]
+                            +beta[4]*covariates[j,4]
+                            +beta[5]*covariates[j,5]
+#                             +beta[6]*covariates[j,6]
+#                             +beta[7]*covariates[j,7]
+#                             +beta[8]*covariates[j,8]
+#                             +beta[9]*covariates[j,9]
+
   
-                            #extreme covariates (either this or the means one should be commented out)
-                            +beta[r,2,sp]*covariates[j,r,2]#winter flows>0.99
-                            +beta[r,3,sp]*covariates[j,r,3]#spring flows>0.99
-                            +beta[r,4,sp]*covariates[j,r,4]#summer flows<XX
-                            +beta[r,5,sp]*covariates[j,1,5]#summer temp>20C
-                            +beta[r,6,sp]*covariates[j,r,4]*covariates[j,r,5]#summer low flow/temp interaction
-                            +beta[r,8,sp]*pow(covariates[j,r,2],2)
-  
-                yDATA[j,r,sp]~dbin(p[j,r,sp],N[j,r,sp])
+                yDATA[j]~dbin(p[j],N[j])
   
           }
-        }
-      }
+        
     
     #Derived output
-      for(sp in 1:2){
-        for(r in 1:4){
+      
+        
           for(j in 1:nsamples){
-                   yExp[j,r,sp]<- N[j,r,sp]*p[j,r,sp]
-                   E[j,r,sp]<-pow((yDATA[j,r,sp]-yExp[j,r,sp]),2)/
-                                    (yExp[j,r,sp]+0.5)
-                  
-                   NNew[j,r,sp]~dpois(lambda[j,r,sp]*adultDATA[j,r,sp])
-                   yNew[j,r,sp]~dbin(p[j,r,sp],NNew[j,r,sp])
-                   ENew[j,r,sp]<-pow((yNew[j,r,sp]-yExp[j,r,sp]),2)/
-                                          (yExp[j,r,sp]+0.5)
+                   #calculate expected values and chi-squared for observed
+                   yExp[j]<- N[j]*p[j]
+                   E[j]<-pow((yDATA[j]-yExp[j]),2)/
+                                    (yExp[j]+0.5)
+                
+                   #generate new data with estimated parameters  
+                   NNew[j]~dpois(lambda[j]*adultDATA[j])
+                   yNew[j]~dbin(p[j],NNew[j])
+                   ENew[j]<-pow((yNew[j]-yExp[j]),2)/
+                                          (yExp[j]+0.5)
   
                    #error to compute rmse
-                   Ey[j,r,sp]<-pow(yDATA[j,r,sp]-yExp[j,r,sp],2)
-  
+                   Ey[j]<-pow(yDATA[j]-yExp[j],2)
+                   pCheck1[j]<-yDATA[j] > yExp[j]
           }
-          fit[r,sp]<-sum(E[,r,sp])
-          fitNew[r,sp]<-sum(ENew[,r,sp])
-        }
-        rmse[sp]<-pow(sum(Ey[,,sp])/(nsamples*4),-2)
-      }
+          fit<-sum(E[])
+          fitNew<-sum(ENew[])
+          pCheck<-mean(pCheck1[])
+        
+        #rmse[sp]<-pow(sum(Ey[,])/(nsamples*4),-2)
   }

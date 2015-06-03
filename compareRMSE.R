@@ -1,7 +1,12 @@
-setwd('~/trout_yoy/results')
+setwd('~/trout_yoy/results/modelOutput')
 
-rmse<-function(dataName){
-  data<-readRDS(paste0('modelOutput',dataName,'.rds'))$BUGSoutput$sims.list
+rivers<-c('jimmy','mitchell','obear','west brook')
+
+rmse<-function(fileName,fileDir){
+  data<-readRDS(file.path(fileDir,fileName))$BUGSoutput$sims.list
+  
+  load('~/trout_yoy/abundanceData.RData')
+  y<-y[3:15,,,1]
   
   nYears<-13
   nRivers<-4
@@ -26,13 +31,26 @@ rmse<-function(dataName){
   return(rmse)
 }
 
-toEvaluate<-c('Random','StockRecruit','Extreme','MeanEnv')
+dic<-function(fileName){
+  dic<-readRDS(fileName)$BUGSoutput$DIC
+  return(dic)
+}
+
+pCheck<-function(fileName){
+  data<-readRDS(fileName)$BUGSoutput$sims.list$pCheck
+  return(mean(data))
+}
+
+toEvaluate<-list.files(getwd())
 rmseOut<-list()
+dicOut<-NULL
 for(d in toEvaluate){
   rmseOut[[d]]<-rmse(d)
+  dicOut[which(d==toEvaluate)]<-dic(d)
+  pCheckOut[which(d==toEvalute)]<-pCheck(d)
 }
 #rmseOut$model<-toEvaluate
-rivers<-c('jimmy','mitchell','obear','west brook')
+
 limits<-c(20,20,50,80)
 
 tiff.par("~/trout_yoy/results/figures/rmse.tif",
@@ -47,3 +65,13 @@ for(r in 1:4){
 }
 }
 dev.off()
+
+rmseSummary<-array(dim=c(length(toEvaluate),4,2))
+summarize<-function(x){
+  return(c(mean(x),quantile(x,probs=c(0.025,0.975))))
+}
+for(d in toEvaluate){
+  rmseSummary[which(d==toEvaluate),,1]<-apply(rmseOut[[d]]$bkt,1,mean)
+  rmseSummary[which(d==toEvaluate),,2]<-apply(rmseOut[[d]]$bnt,1,mean)
+}
+dimnames(rmseSummary)<-list(strsplit(toEvaluate,'.rds'),rivers,c('bkt','bnt'))

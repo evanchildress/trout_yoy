@@ -10,11 +10,13 @@ do <- list(
     'create_hatch_year.R',
     'create_abundance_arrays_by_section.R',
     'create_abundance_arrays_by_river.R',
-    'create_detection_array.R'
+    'create_detection_array.R',
+    'create_adult_array.R'
 	),
   env_prep = c(
     'load_data.R',
     'add_early_trib_predictions.R',
+    'covariate_inputs.R',
     'create_covariates.R'
     #,'create_loess_covariates.R' #not functional
   ),
@@ -42,5 +44,5 @@ for(stage in names(do)){
 	}	
 }
 
-
+rm(shared_data)
 

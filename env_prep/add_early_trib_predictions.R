@@ -47,3 +47,7 @@ for(i in ed[river=="west brook"&is.na(temperature),date]){
 
 ed<-ed[,list(date,river,discharge,temperature)]
 assign('ed',ed,env=shared_data)
+
+## Save cleaned daily data.
+dbWriteTable(conn=link$conn, name='data_environmental', value=ed,
+             row.names=FALSE, overwrite=TRUE, append=FALSE)

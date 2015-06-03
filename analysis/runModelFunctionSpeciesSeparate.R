@@ -1,9 +1,14 @@
-runModel<-function(stockRecruit=F,env='none',randomYear=F){
+runModel<-function(stockRecruit=F,env='none',randomYear=F,species){
+  if(species=='bkt'){sp<-1
+  } else {if(species=='bnt'){sp<-2}}
+  
+  speciesName<-paste0(toupper(substr(species,1,1)),substr(species,2,3))
   resultsDir<-"~/trout_yoy/results/"
   
-  outName<-ifelse(randomYear,'randomYear',
-                  ifelse(env=='none','stockRecruit',
-                         ifelse(stockRecruit,paste0(env,'StockRecruit'),env)))
+  outName<-ifelse(randomYear,paste0('randomYear',speciesName),
+                  ifelse(env=='none',paste0('stockRecruit',speciesName),
+                         ifelse(stockRecruit,paste0(env,'StockRecruit',speciesName),
+                                paste0(env,speciesName))))
 
   createModel(stockRecruit=stockRecruit,env=env,randomYear=randomYear)
   
@@ -16,11 +21,11 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
   rm(sumTempMean)
   rm(sumTempFill)
   
-  y<-y[3:15,,,1]
+  y<-y[3:15,,sp,1]
   
   covariates<-covariates[1:13,,]
-  detection<-detection[1:13,,]
-  A<-A[1:14,,]
+  detection<-detection[1:13,,sp]
+  A<-A[1:14,,sp]
   
   covPCA<-array(NA,dim=dim(covariates))
   if(env=='pca'){
@@ -73,8 +78,8 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
   
     if(stockRecruit & env %in% c('mean','extreme')){
       return(
-        list(c=array(c(runif(8,0,5),rep(0,16)),dim=c(4,2,3)),
-                           beta=array(rnorm(64,0,0.01),dim=c(4,8,2)),
+        list(c=array(c(runif(4,0,5),rep(0,16)),dim=c(4,3)),
+                           beta=array(rnorm(32,0,0.01),dim=c(4,8)),
                            N=N
         )
       )
@@ -82,7 +87,7 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
     
     if(stockRecruit & env=='none'){
       return(
-        list(c=array(c(runif(8,0,5),rep(0,16)),dim=c(4,2,3)),
+        list(c=array(c(runif(4,0,5),rep(0,16)),dim=c(4,3)),
                           N=N
         )
       )
@@ -90,8 +95,8 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
     
     if(stockRecruit & env=='pca'){
       return(
-        list(c=array(c(runif(8,0,5),rep(0,16)),dim=c(4,2,3)),
-             beta=array(rnorm(72,0,0.01),dim=c(4,9,2)),
+        list(c=array(c(runif(4,0,5),rep(0,16)),dim=c(4,3)),
+             beta=array(rnorm(20,0,0.01),dim=c(4,5)),
              N=N
         )
       )
@@ -99,7 +104,7 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
     
     if(!stockRecruit & env=='pca'){
       return(
-        list(beta=array(rnorm(72,0,0.01),dim=c(4,9,2)),
+        list(beta=array(rnorm(20,0,0.01),dim=c(4,5)),
              N=N
         )
       )
@@ -107,7 +112,7 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
     
     if(!stockRecruit & env %in% c('mean','extreme')){
       return(
-        list(beta=array(rnorm(64,0,0.01),dim=c(4,8,2)),
+        list(beta=array(rnorm(32,0,0.01),dim=c(4,8)),
               N=N
         )
       )
@@ -118,16 +123,16 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
   
   
   if(stockRecruit & env!='none'){
-    params<-c("N","c","beta","fit","fitNew","yExp")
+    params<-c("N","c","beta","fit","fitNew","yExp",'pCheck')
     } else {
       if(stockRecruit & env=='none'){
-        params<-c("N","c","fit","fitNew","yExp")
+        params<-c("N","c","fit","fitNew","yExp",'pCheck')
       } else {
         if(!stockRecruit & env!='none'){
-          params<-c("N","c","beta","fit","fitNew","yExp")
+          params<-c("N","c","beta","fit","fitNew","yExp",'pCheck')
         } else {
           if(randomYear){
-            params<-c("N","c","eps","fit","fitNew","yExp")
+            params<-c("N","c","eps","fit","fitNew","yExp",'pCheck')
           }
         }
       }
@@ -140,32 +145,33 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F){
   
   out<-jags(win.data,inits,params,"~/trout_yoy/abundanceModel.txt",n.chains=nc,n.iter=ni,
             n.thin=nt,n.burnin=nb,working.directory=getwd())
-  saveRDS(out,file.path(resultsDir,paste0("modelOutput/",outName,".rds")))
+  saveRDS(out,file.path(resultsDir,paste0("modelOutput/SpeciesSeparate/",outName,".rds")))
   
   sims<-out$BUGSoutput$sims.list
   
 ################### make posterior predictive check figure ###################
-tiff.par(file.path(resultsDir,paste0("figures/bayesP_",outName,".tif")),
-           mfrow=c(1,2),width=8,height=4,mar=c(2.5,2.5,1,0))
-  plot(sims$fitNew[,,1]~sims$fit[,,1],
+tiff.par(file.path(resultsDir,paste0("figures/predictiveChecks/bayesP_",outName,".tif")),
+           mfrow=c(1,1),width=4,height=4,mar=c(2.5,2.5,1,0))
+  plot(sims$fitNew[,1]~sims$fit[,1],
        xlab="Discrepancy Actual Data",ylab="Discrepancy Replicated Data",
-       bty='l',main='bkt')
+       bty='l',main='bkt',ylim=c(min(sims$fitNew),max(sims$fitNew)),
+       xlim=c(min(sims$fit),max(sims$fit)))
   for(r in 1:4){
-    points(sims$fitNew[,r,1]~sims$fit[,r,1],col=palette()[r])
+    points(sims$fitNew[,r]~sims$fit[,r],col=palette()[r])
   }
   abline(0,1,lwd=2)
-  text(max(sims$fit[,,1])*0.9,max(sims$fitNew[,,1])*0.9,
-       round(mean(sims$fitNew[,,1]>sims$fit[,,1]),3))
+  text(max(sims$fit[,])*0.9,max(sims$fitNew[,])*0.9,
+       round(mean(sims$fitNew[,]>sims$fit[,]),3))
   
-  plot(sims$fitNew[,,2]~sims$fit[,,2],
-       xlab="Discrepancy Actual Data",ylab="Discrepancy Replicated Data",
-       bty='l',main='bnt',pch=NA)
-  for(r in 1:4){
-    points(sims$fitNew[,r,2]~sims$fit[,r,2],col=palette()[r])
-  }
-  abline(0,1,lwd=2)
-  text(max(sims$fit[,,2])*0.9,max(sims$fitNew[,,2])*0.9,
-              round(mean(sims$fitNew[,,2]>sims$fit[,,2]),3))
+#   plot(sims$fitNew[,,2]~sims$fit[,,2],
+#        xlab="Discrepancy Actual Data",ylab="Discrepancy Replicated Data",
+#        bty='l',main='bnt',pch=NA)
+#   for(r in 1:4){
+#     points(sims$fitNew[,r,2]~sims$fit[,r,2],col=palette()[r])
+#   }
+#   abline(0,1,lwd=2)
+#   text(max(sims$fit[,,2])*0.9,max(sims$fitNew[,,2])*0.9,
+#               round(mean(sims$fitNew[,,2]>sims$fit[,,2]),3))
   dev.off()
 #####################################################################  
 }

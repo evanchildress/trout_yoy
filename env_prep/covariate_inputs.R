@@ -1,0 +1,44 @@
+covariate_inputs<-list(fall_discharge = list(covariate = "discharge",
+                                             month     = 10:12,
+                                             FUN       = median),
+                       winter_floods =  list(covariate = "discharge",
+                                             threshold = 0.98,
+                                             high.low  = "high",
+                                             freq.dur  = "duration",
+                                             month = c(12,1)
+#                                              ,FUN   = max
+                                              ),
+                       spring_floods =  list(covariate = "discharge",
+                                             threshold = 0.98,
+                                             high.low  = "high",
+                                             freq.dur  = "duration",
+                                             month     = 2:3
+#                                             ,FUN       = max
+                                              ),
+                       summer_low =     list(covariate = "discharge",
+                                             month     = 6:9,
+                                             threshold = 0.02,
+                                             high.low  = "low",
+                                             freq.dur  = "duration"),
+                       summer_temp =    list(covariate = "temperature",
+                                             threshold = 15,
+                                             high.low  = "high",
+                                             freq.dur  = "duration",
+                                             month     = 6:9),
+                       winter_flow_mean =  list(covariate = "discharge",
+                                                month     = c(12,1),
+                                                FUN       = mean),
+                       spring_flow_mean =  list(covariate = "discharge",
+                                                month     = 2:3,
+                                                FUN       = mean),
+                       summer_flow_mean =  list(covariate = "discharge",
+                                                month     = c(6:8),
+                                                FUN       = mean),
+                       summer_temp_mean =  list(covariate = "temperature",
+                                                month     = c(6:8),
+                                                FUN       = mean)
+)
+
+if(exists("shared_data")){
+  assign("covariate_inputs",covariate_inputs,env=shared_data)
+}

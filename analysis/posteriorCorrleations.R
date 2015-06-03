@@ -69,6 +69,13 @@ postCor<-function(x,vars=c('beta','c'),sp=1,modelName){
   dev.off()
   return(meanCor)
 }
+
+sims<-readRDS("~/trout_yoy/results/modelOutput/meanStockRecruit.rds")$BUGSoutput$sims.list
+postCor(sims,modelName="meanStockRecruit")
+
+sims<-readRDS("~/trout_yoy/results/modelOutput/extremeStockRecruit.rds")$BUGSoutput$sims.list
+postCor(sims,modelName="extremeStockRecruit")
+
 # 
 # beta1=fall discharge
 # beta2=winter discharge

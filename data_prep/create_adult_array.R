@@ -13,3 +13,4 @@ bntAdult<-acast(melt(bntAdult[season==3,list(year,river,mean)],
 bntAdult[1,1:3]<-apply(bntAdult[2:nrow(bntAdult),1:3],2,mean)
 
 A<-array(c(bktAdult,bntAdult),dim=c(dim(bktAdult),2))
+assign('A',A,env=shared_data)
