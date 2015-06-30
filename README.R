@@ -16,9 +16,15 @@ do <- list(
   env_prep = c(
     'load_data.R',
     'add_early_trib_predictions.R',
+    
+    #need to run these only if there are changes to the input files
+    #'importHighResTemp.R', 
+    #'fillHighResTemps.R',
+
+    'createHighResTempCovariates.R',
     'covariate_inputs.R',
     'create_covariates.R'
-    #,'create_loess_covariates.R' #not functional
+    #,'create_loess_covariates.R' #not functional and abandoned
   ),
   save = 'saveData.R'
 )

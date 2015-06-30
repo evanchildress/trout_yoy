@@ -1,8 +1,6 @@
 fileDir<-'~/trout_yoy/results/modelOutput/speciesRiverSeparate'
 setwd(fileDir)
 
-rivers<-c('jimmy','mitchell','obear','west brook')
-
 summarizeFit<-function(fileName){
   #load model output
   data<-readRDS(fileName)$BUGSoutput
@@ -33,22 +31,25 @@ summarizeFit<-function(fileName){
   pCheck<-mean(data$sims.list$pCheck)
   
   #collate and return results
-  result<-c(river,species,modelType,rmse,dic,pCheck)
+  result<-data.frame(river,species,modelType,rmse,dic,pCheck)
   names(result)<-c("river","species","modelType","rmse","dic","pCheck")
   return(result)
 }  
 
 toEvaluate<-list.files(fileDir)
 
-results<-data.frame("river"=NA,
-                    "species"=NA,
-                    "modelType"=NA,
-                    "rmse"=NA,
-                    "dic"=NA,
-                    "pCheck"=NA)
+results<-data.table("river"=as.character(rep(NA,length(toEvaluate))),
+                    "species"=as.character(rep(NA,length(toEvaluate))),
+                    "modelType"=as.character(rep(NA,length(toEvaluate))),
+                    "rmse"=as.numeric(rep(NA,length(toEvaluate))),
+                    "dic"=as.numeric(rep(NA,length(toEvaluate))),
+                    "pCheck"=as.numeric(rep(NA,length(toEvaluate))))
 
 for(d in toEvaluate){
-  results[which(d==toEvaluate),]<-summarizeFit(d)
+  results[which(d==toEvaluate),]<-summarizeFit(d)[1,]
 }
 
-results<-data.table(results)
+setkey(results,species,river,dic)
+
+forCoef<-c(grep('meanStockRecruit',toEvaluate),
+  grep('extremeStockRecruit',toEvaluate))

@@ -1,4 +1,5 @@
-env.cov<-function(covariate,month,threshold=NA,high.low=NA,freq.dur=NA,FUN=NULL){
+env.cov<-function(covariate,month,threshold=NA,high.low=NA,
+                  freq.dur=NA,FUN=NULL){
   
   if(!is.null(FUN) & any(!is.na(threshold),!is.na(high.low),!is.na(freq.dur))){
     stop("cannot define both 'FUN' and threshold/high.low/freq.dur")
@@ -74,14 +75,22 @@ env.cov<-function(covariate,month,threshold=NA,high.low=NA,freq.dur=NA,FUN=NULL)
 }
 
 
-covariates<-array(dim=c(end_year-start_year+1,4,length(names(covariate_inputs))))
+covariates<-array(dim=c(end_year-start_year+1,4,length(names(covariate_inputs))+2))
 dimnames(covariates)<-list(start_year:end_year,
                            unique(ed$rivers),
-                           names(covariate_inputs))
+                           c(names(covariate_inputs),
+                             "summerTempHighRes",
+                             "summerTempMeanHighRes"))
 
 for(i in 1:length(names(covariate_inputs))){
   covariates[,,i]<-do.call(env.cov,covariate_inputs[[i]])
 }
+
+covariates[,,"summerTempHighRes"]<-apply(summerT,2,
+                                   function(x){return(scale(x)[,1])})
+covariates[,,"summerTempMeanHighRes"]<-apply(meanSummerT,2,
+                                   function(x){return(scale(x)[,1])})
+
 
 assign('covariates',covariates,env=shared_data)
 saveRDS(covariates,"~/process-data/data_store/processed_data/covariates.rds")

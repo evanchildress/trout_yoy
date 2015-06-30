@@ -1,6 +1,6 @@
 covariate_inputs<-list(fall_discharge = list(covariate = "discharge",
-                                             month     = 10:12,
-                                             FUN       = median),
+                                             month     = 10:11,
+                                             FUN       = mean),
                        winter_floods =  list(covariate = "discharge",
                                              threshold = 0.98,
                                              high.low  = "high",
@@ -21,7 +21,7 @@ covariate_inputs<-list(fall_discharge = list(covariate = "discharge",
                                              high.low  = "low",
                                              freq.dur  = "duration"),
                        summer_temp =    list(covariate = "temperature",
-                                             threshold = 15,
+                                             threshold = 18,
                                              high.low  = "high",
                                              freq.dur  = "duration",
                                              month     = 6:9),
@@ -36,7 +36,7 @@ covariate_inputs<-list(fall_discharge = list(covariate = "discharge",
                                                 FUN       = mean),
                        summer_temp_mean =  list(covariate = "temperature",
                                                 month     = c(6:8),
-                                                FUN       = mean)
+                                                FUN       = median)
 )
 
 if(exists("shared_data")){

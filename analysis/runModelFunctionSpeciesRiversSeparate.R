@@ -1,8 +1,10 @@
-runModel<-function(stockRecruit=F,env='none',randomYear=F,species,river){
+runModel<-function(stockRecruit=F,env='none',randomYear=F,
+                   species,river,highResTemp=F){
   rivers<-c("Jimmy","Mitchell","Obear","WestBrook")
   riverName<-rivers[river]
   if(species=='bkt'){sp<-1
   } else {if(species=='bnt'){sp<-2}}
+
   
   speciesName<-paste0(toupper(substr(species,1,1)),substr(species,2,3))
   resultsDir<-"~/trout_yoy/results/"
@@ -16,6 +18,10 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,species,river){
   
      
   load('~/trout_yoy/abundanceData.RData')
+  if(highResTemp==T){
+    covariates[,,5]<-covariates[,,10]
+    covariates[,,9]<-covariates[,,11]
+  }
   
   sumTempMean<-data.table(covariates[,,9])
   sumTempFill<-lm(V4~V3+V2+V1,data=sumTempMean)
@@ -27,11 +33,18 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,species,river){
   
   covariates<-covariates[1:13,river,]
   detection<-detection[1:13,river,sp]
-  A<-A[1:14,river,sp]
   
-  covPCA<-array(NA,dim=dim(covariates))
-  if(env=='pca'){
+  otherSp<-A[2:14,river,ifelse(sp==1,2,1)]
+  
+  if(riverName %in% c("Jimmy","Mitchell","WestBrook")){
+    A<-apply(A[,c(1,2,4),sp],1,sum)
+  } else {
+  A<-A[1:14,river,sp]
+  }
 
+
+  if(env=='pca'){
+  covPCA<-array(NA,dim=dim(covariates))
     pca<-prcomp(covariates,center=T,scale=T)
     scores<-pca$x
 #     loadings<-pca$rotation
@@ -69,17 +82,25 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,species,river){
   
   N<-y #use naive estimate as initial value
   
+#Add orthogonal versions of quadratics for relevant variables
+  covariates<-array(c(covariates,rep(NA,dim(covariates)[1]*3)),
+                    dim=c(13,12))
+  covariates[,10]<-poly(covariates[,1],2)[,2]
+  covariates[,11]<-poly(covariates[,2],2)[,2]
+  covariates[,12]<-poly(covariates[,6],2)[,2]
+  
   win.data<-list(yDATA=y,
                  nsamples=length(y),
                  covariates=covariates,
                  p=detection,
                  adultDATA=A)
+                 #,otherSpDATA=otherSp)
   
   inits<-function(){
   
     if(stockRecruit & env %in% c('mean','extreme')){
       return(
-        list(c=c(runif(1,0,5),rnorm(1,0,0.01)),
+        list(c=c(runif(1,0,5),-0.01),
              beta=rnorm(8,0,0.01),
              N=N
         )
@@ -124,16 +145,16 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,species,river){
   
   
   if(stockRecruit & env!='none'){
-    params<-c("N","c","beta","fit","fitNew","yExp",'pCheck')
+    params<-c("N","c","beta","fit","fitNew","yExp",'pCheck','nPredict')
     } else {
       if(stockRecruit & env=='none'){
-        params<-c("N","c","fit","fitNew","yExp",'pCheck')
+        params<-c("N","c","fit","fitNew","yExp",'pCheck','nPredict')
       } else {
         if(!stockRecruit & env!='none'){
-          params<-c("N","c","beta","fit","fitNew","yExp",'pCheck')
+          params<-c("N","c","beta","fit","fitNew","yExp",'pCheck','nPredict')
         } else {
           if(randomYear){
-            params<-c("N","c","eps","fit","fitNew","yExp",'pCheck')
+            params<-c("N","c","eps","fit","fitNew","yExp",'pCheck','nPredict')
           }
         }
       }
