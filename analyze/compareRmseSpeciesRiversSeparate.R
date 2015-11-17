@@ -50,6 +50,9 @@ for(d in toEvaluate){
 }
 
 setkey(results,species,river,dic)
+assign("results",results,env=.GlobalEnv)
 
 forCoef<-c(grep('meanStockRecruit',toEvaluate),
   grep('extremeStockRecruit',toEvaluate))
+
+save(results,file="~/trout_yoy/results/rmse.RData")

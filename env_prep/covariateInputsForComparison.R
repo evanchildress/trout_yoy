@@ -41,9 +41,18 @@ covariate_inputs<-list(fall_discharge = list(covariate = "discharge",
                                                 threshold = 0.2,
                                                 high.low  = "low",
                                                 freq.dur  = "duration",
-                                                month = c(12,1))
-)
+                                                month = c(12,1)),
+                      winter_flow_max =  list(covariate = "discharge",
+                                               month     = c(12,1),
+                                               FUN       = max),
+                      spring_flow_max =  list(covariate = "discharge",
+                                               month     = 2:3,
+                                               FUN       = max),
+                      summer_flow_min =  list(covariate = "discharge",
+                                               month     = c(6:8),
+                                               FUN       = min),
+                      winter_flow_min =  list(covariate = "discharge",
+                                              month     = c(12,1),
+                                              FUN       = min)
 
-if(exists("shared_data")){
-  assign("covariate_inputs",covariate_inputs,env=shared_data)
-}
+)

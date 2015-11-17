@@ -18,15 +18,35 @@ do <- list(
     'add_early_trib_predictions.R',
     
     #need to run these only if there are changes to the input files
-    #'importHighResTemp.R', 
-    #'fillHighResTemps.R',
-
+     #'importHighResTemp.R', 
+     #'fillHighResTemps.R',
+    'loadHighResEnv.R',#loads highResEnv from db if it isn't created in the above two scripts
+    
+    'predictWestBrookDischarge.R',
+    'predictTribDischargeFromWestBrook.R',
+    
+    'fillHighResDepths.R',
+    'convertDepthToDischarge.R',
+    
     'createHighResTempCovariates.R',
+    
     'covariate_inputs.R',
-    'create_covariates.R'
+    'create_covariates.R',
+    #'covariate_inputs_bnt.R',
+    #'create_covariates_bnt.R',
+    #'create_covariates_old.R'
     #,'create_loess_covariates.R' #not functional and abandoned
   ),
-  save = 'saveData.R'
+  save = 'saveData.R',
+  
+  analyze = c('runModelSpeciesRiversSeparate.R',
+              'N.R',
+              'NextremeStock.R',
+              'stockRecruit.R',
+              'envCovariatesProportionalChange.R',
+              'compareRmseSpeciesRiversSeparate.R',
+              'posteriorCorrelations.R'
+              )
 )
 
 source(

@@ -67,8 +67,9 @@ summarize<-function(x){
   return(c(mean(x),quantile(x,probs=c(0.025,0.975))))
 }
 for(d in toEvaluate){
+  if(!is.null(rmseOut[[d]])){
   rmseSummary[which(d==toEvaluate),]<-apply(rmseOut[[d]],1,mean)
-}
+}}
 dimnames(rmseSummary)<-list(strsplit(toEvaluate,'.rds'),rivers)
 dimnames(pCheckOut)<-list(strsplit(toEvaluate,'.rds'),rivers)
 

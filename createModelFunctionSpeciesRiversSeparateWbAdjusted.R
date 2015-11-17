@@ -1,5 +1,3 @@
-#split into term for stock and term for env combined after transformation by addition
-
 createModel<-function(stockRecruit=T,env='none',randomYear=F){
 if((stockRecruit|env!='none') & randomYear){
   stop("not set up to have both random year and covariates")
@@ -10,19 +8,20 @@ if(stockRecruit & env=='mean'){
     #Priors
     #State process
         
-beta[1]~dnorm(0,0.001)T(-3,3)
-beta[2]~dnorm(0,0.001)T(-3,3)
-beta[3]~dnorm(0,0.001)T(-3,3)
-beta[4]~dnorm(0,0.001)T(-3,3)
-beta[5]~dnorm(0,0.001)T(-3,3)
-beta[6]~dnorm(0,0.001)T(-3,3)
-beta[7]~dnorm(0,0.001)T(-3,3)
-beta[8]~dnorm(0,0.001)T(-3,3)
-
+          for(f in 1:6){
+  #covariate betas
+            beta[f]~dnorm(0,0.01)
+          }
+      ",
+      ifelse(species=='bkt'&r==4,
+        "beta[8]~dnorm(0,0.01)",
+        "beta[8]~dnorm(0,0.01)"),
+  "
+      beta[7]~dnorm(0,0.01)
 
   #stock-recruit
-          c[1]~dunif(0,3)
-          c[2]~dnorm(0,0.001)T(-0.1,0.1)
+          c[1]~dunif(0,50)
+          c[2]~dnorm(0,0.01)
           #c[3]~dnorm(0,0.01)
   
     #Likelihood for yoy
@@ -31,7 +30,7 @@ beta[8]~dnorm(0,0.001)T(-3,3)
               N[j]~dpois(lambda[j]*adultDATA[j])
                 log(lambda[j])<-
                             #stock-recruit
-                            c[1]+c[2]*adultDATAcentered[j]#+c[3]*pow(adultDATA[j],2)
+                            c[1]+c[2]*adultDATA[j]#+c[3]*pow(adultDATA[j],2)
   
                             #environmental covariates
                             +beta[1]*covariates[j,1]+beta[7]*pow(covariates[j,1],2)
@@ -83,16 +82,19 @@ if(!stockRecruit & env=='mean'){
     #State process
       
         
-        c[1]~dunif(0,5)
+        c[1]~dunif(0,50)
 
-beta[1]~dnorm(0,0.001)T(-3,3)
-beta[2]~dnorm(0,0.001)T(-3,3)
-beta[3]~dnorm(0,0.001)T(-3,3)
-beta[4]~dnorm(0,0.001)T(-3,3)
-beta[5]~dnorm(0,0.001)T(-3,3)
-beta[6]~dnorm(0,0.001)T(-3,3)
-beta[7]~dnorm(0,0.001)T(-3,3)
-beta[8]~dnorm(0,0.001)T(-3,3)
+          for(f in 1:6){
+  #covariate betas
+            beta[f]~dnorm(0,0.01)
+          }
+      ",
+      ifelse(species=='bkt'&r==4,
+        "beta[8]~dnorm(0,0.01)",
+        "beta[8]~dnorm(0,0.01)"),
+  "
+      beta[7]~dnorm(0,0.01)
+
 
   
     #Likelihood for yoy
@@ -152,20 +154,20 @@ if(stockRecruit & env=='extreme'){
     #Priors
     #State process
       
-beta[1]~dnorm(0,0.001)T(-3,3)
-beta[2]~dnorm(0,0.001)T(-3,3)
-beta[3]~dnorm(0,0.001)T(-3,3)
-beta[4]~dnorm(0,0.001)T(-3,3)
-beta[5]~dnorm(0,0.001)T(-3,3)
-beta[6]~dnorm(0,0.001)T(-3,3)
-beta[7]~dnorm(0,0.001)T(-3,3)
-beta[8]~dnorm(0,0.001)T(-3,3)
-
-
+          for(f in 1:6){
+  #covariate betas
+            beta[f]~dnorm(0,0.01)
+          }
+      ",
+      ifelse(species=='bkt'&r==4,
+        "beta[8]~dnorm(0,0.01)",
+        "beta[8]~dnorm(0,0.01)"),
+  "
+      beta[7]~dnorm(0,0.01)
 
   #stock-recruit
-          c[1]~dunif(0,3)
-          c[2]~dnorm(0,0.001)T(-0.1,0.1)
+          c[1]~dunif(0,50)
+          c[2]~dnorm(0,0.01)
           #c[3]~dnorm(0,0.01)
         
   
@@ -176,7 +178,7 @@ beta[8]~dnorm(0,0.001)T(-3,3)
               N[j]~dpois(lambda[j]*adultDATA[j])
                 log(lambda[j])<-
                             #stock-recruit
-                            c[1]+c[2]*adultDATAcentered[j]#+pow(adultDATA[j],2)*c[3]#+c[3]*otherSpDATA[j]
+                            c[1]+c[2]*adultDATA[j]#+pow(adultDATA[j],2)*c[3]#+c[3]*otherSpDATA[j]
                             
                             #environmental covariates
                             +beta[1]*covariates[j,1]+beta[7]*pow(covariates[j,1],2)
@@ -186,7 +188,7 @@ beta[8]~dnorm(0,0.001)T(-3,3)
                             +beta[3]*covariates[j,3]#spring flows>0.99
                             +beta[4]*covariates[j,4]#summer flows<XX
                             +beta[5]*covariates[j,5]#summer temp>20C
-                            +beta[6]*covariates[j,4]*covariates[j,5]#summer mean flow/temp interaction
+                            +beta[6]*covariates[j,8]*covariates[j,9]#summer mean flow/temp interaction
                             +beta[8]*pow(covariates[j,2],2)
   
                 yDATA[j]~dbin(p[j],N[j])
@@ -229,17 +231,18 @@ if(!stockRecruit & env=='extreme'){
     #State process
       
         
-        c[1]~dunif(0,5)
+        c[1]~dunif(0,50)
 
-beta[1]~dnorm(0,0.001)T(-3,3)
-beta[2]~dnorm(0,0.001)T(-3,3)
-beta[3]~dnorm(0,0.001)T(-3,3)
-beta[4]~dnorm(0,0.001)T(-3,3)
-beta[5]~dnorm(0,0.001)T(-3,3)
-beta[6]~dnorm(0,0.001)T(-3,3)
-beta[7]~dnorm(0,0.001)T(-3,3)
-beta[8]~dnorm(0,0.001)T(-3,3)
-
+  for(f in 1:6){
+  #covariate betas
+            beta[f]~dnorm(0,0.01)
+          }
+      ",
+      ifelse(species=='bkt'&r==4,
+        "beta[8]~dnorm(0,0.01)",
+        "beta[8]~dnorm(0,0.01)"),
+  "
+      beta[7]~dnorm(0,0.01)
 
   
     #Likelihood for yoy
@@ -257,7 +260,7 @@ beta[8]~dnorm(0,0.001)T(-3,3)
                             +beta[3]*covariates[j,3]#spring flows>0.99
                             +beta[4]*covariates[j,4]#summer flows<XX
                             +beta[5]*covariates[j,5]#summer temp>20C
-                            +beta[6]*covariates[j,4]*covariates[j,5]#summer mean flow/temp interaction
+                            +beta[6]*covariates[j,8]*covariates[j,9]#summer mean flow/temp interaction
                             +beta[8]*pow(covariates[j,2],2)
   
                 yDATA[j]~dbin(p[j],N[j])
@@ -301,8 +304,8 @@ if(stockRecruit & env=='none'){
         
   
       #stock-recruit
-          c[1]~dunif(0,3)
-          c[2]~dnorm(0,0.001)T(-0.1,0.1)
+          c[1]~dunif(0,50)
+          c[2]~dnorm(0,0.01)
           #c[3]~dnorm(0,0.01)
       
     
@@ -313,7 +316,7 @@ if(stockRecruit & env=='none'){
               N[j]~dpois(lambda[j]*adultDATA[j])
                 log(lambda[j])<-
                             #stock-recruit
-                            c[1]+c[2]*adultDATAcentered[j]#+c[3]*pow(adultDATA[j],2)
+                            c[1]+c[2]*adultDATA[j]#+c[3]*pow(adultDATA[j],2)
   
                 yDATA[j]~dbin(p[j],N[j])
 
@@ -361,8 +364,8 @@ if(stockRecruit & env=='pca'){
             beta[f]~dnorm(0,0.01)
           }
   #stock-recruit
-          c[1]~dunif(0,3)
-          c[2]~dnorm(0,0.001)T(-0.1,0.1)
+          c[1]~dunif(0,50)
+          c[2]~dnorm(0,0.01)
           #c[3]~dnorm(0,0.01)
 
   
@@ -373,7 +376,7 @@ if(stockRecruit & env=='pca'){
               N[j]~dpois(lambda[j]*adultDATA[j])
                 log(lambda[j])<-
                             #stock-recruit
-                            c[1]+c[2]*adultDATAcentered[j]#+c[3]*pow(adultDATA[j],2)
+                            c[1]+c[2]*adultDATA[j]#+c[3]*pow(adultDATA[j],2)
   
                             #environmental covariates (based on pca in west brook)
                             +beta[1]*covariates[j,1]
@@ -427,7 +430,7 @@ if(!stockRecruit & env=='pca'){
     #State process
       
         
-          c[1]~dunif(0,5)
+          c[1]~dunif(0,50)
           for(f in 1:5){
   #covariate betas
             beta[f]~dnorm(0,0.01)
@@ -495,7 +498,7 @@ if(randomYear){
 
       
       
-        c[1]~dunif(0,5)
+        c[1]~dunif(0,50)
         for(j in 1:nsamples){
           eps[j]~dnorm(0,tau.eps)
         }

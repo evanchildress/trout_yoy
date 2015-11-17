@@ -68,15 +68,19 @@ postCor<-function(x,vars=c('beta','c'),modelName){
 
 riverNames<-c("Jimmy","Mitchell","Obear","WestBrook")
 modelType<-c("meanStockRecruit","extremeStockRecruit")
+postCorResult<-list()
 for(r in riverNames){
   for(m in modelType){
-    modelName<-paste0(m,"Bkt",r,".rds")
-    sims<-readRDS(file.path("~/trout_yoy/results/modelOutput/speciesRiverSeparate",
-                            modelName))$BUGSoutput$sims.list
-    assign(paste0(m,r),postCor(sims,modelName=modelName))
+    for(sp in c("Bkt","Bnt")){
+      modelName<-paste0(m,sp,r,".rds")
+      sims<-readRDS(file.path("~/trout_yoy/results/modelOutput/speciesRiverSeparate",
+                              modelName))$BUGSoutput$sims.list
+      postCorResult[[paste0(m,sp,r)]]<-round(postCor(sims,modelName=modelName),2)
+    }
   }
 }
 
+assign("postCorResult",postCorResult,env=.GlobalEnv)
 # 
 # beta1=fall discharge
 # beta2=winter discharge
@@ -86,3 +90,5 @@ for(r in riverNames){
 # beta6 summer flow*temp
 # beta7=fall discharge^2
 # beta8=winter discharge^2+
+
+save(postCorResult,file="~/trout_yoy/results/posteriorCorrelations.RData")

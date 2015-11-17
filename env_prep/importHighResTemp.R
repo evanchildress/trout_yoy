@@ -1,4 +1,3 @@
-require(readxl)
 
 originalDir<-"~/process-data/data_store/original_data"
 solinstFile<-file.path(originalDir,"West Drainage Solinst logger data.xlsx")

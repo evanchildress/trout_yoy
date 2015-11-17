@@ -14,20 +14,29 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
                          ifelse(stockRecruit,paste0(env,'StockRecruit',speciesName,riverName),
                                 paste0(env,speciesName,riverName))))
 
-  createModel(stockRecruit=stockRecruit,env=env,randomYear=randomYear)
+  createModel(stockRecruit=stockRecruit,env=env,
+              randomYear=randomYear)
   
      
   load('~/trout_yoy/abundanceData.RData')
+  covariates<-get(paste0("covariates",chartr("b","B",species)))
+  covariates<-covariatesBkt
+#   if(riverName %in% c("Mitchell","Obear")){
+#     covariates<-covariatesOld
+#   }
+  
   if(highResTemp==T){
     covariates[,,5]<-covariates[,,10]
     covariates[,,9]<-covariates[,,11]
   }
+
   
-  sumTempMean<-data.table(covariates[,,9])
-  sumTempFill<-lm(V4~V3+V2+V1,data=sumTempMean)
-  covariates[6:9,4,9]<-predict(sumTempFill,data.frame(sumTempMean[6:9,list(V3,V2,V1)]))
-  rm(sumTempMean)
-  rm(sumTempFill)
+  
+#   sumTempMean<-data.table(covariates[,,9])
+#   sumTempFill<-lm(V4~V3+V2+V1,data=sumTempMean)
+#   covariates[6:9,4,9]<-predict(sumTempFill,data.frame(sumTempMean[6:9,list(V3,V2,V1)]))
+#   rm(sumTempMean)
+#   rm(sumTempFill)
   
   y<-y[3:15,river,sp,1]
   
@@ -36,12 +45,15 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
   
   otherSp<-A[2:14,river,ifelse(sp==1,2,1)]
   
+  #group stock for 3 connected rivers
   if(riverName %in% c("Jimmy","Mitchell","WestBrook")){
     A<-apply(A[,c(1,2,4),sp],1,sum)
   } else {
   A<-A[1:14,river,sp]
   }
-
+  
+  #or don't group
+  #A<-A[1:14,river,sp]
 
   if(env=='pca'){
   covPCA<-array(NA,dim=dim(covariates))
@@ -83,16 +95,25 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
   N<-y #use naive estimate as initial value
   
 #Add orthogonal versions of quadratics for relevant variables
-  covariates<-array(c(covariates,rep(NA,dim(covariates)[1]*3)),
-                    dim=c(13,12))
-  covariates[,10]<-poly(covariates[,1],2)[,2]
-  covariates[,11]<-poly(covariates[,2],2)[,2]
-  covariates[,12]<-poly(covariates[,6],2)[,2]
+  covariates<-array(c(covariates,rep(NA,dim(covariates)[1]*4)),
+                    dim=c(13,15))
+  covariates[,12]<-poly(covariates[,1],2)[,2]
+  covariates[,13]<-poly(covariates[,2],2)[,2]
+  covariates[,14]<-poly(covariates[,6],2)[,2]
+  
+    if(env=='extreme'){
+  covariates[,15]<-scale(covariates[,4]*covariates[,5])[,1]
+  } else if(env=='mean'){
+    covariates[,15]<-scale(covariates[,8]*covariates[,9])[,1]
+  }
+  
+  Acentered<-A#scale(A)[,1]
   
   win.data<-list(yDATA=y,
                  nsamples=length(y),
                  covariates=covariates,
                  p=detection,
+                 adultDATAcentered=Acentered,
                  adultDATA=A)
                  #,otherSpDATA=otherSp)
   
@@ -100,8 +121,8 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
   
     if(stockRecruit & env %in% c('mean','extreme')){
       return(
-        list(c=c(runif(1,0,5),-0.01),
-             beta=rnorm(8,0,0.01),
+        list(c=c(runif(1,0,3),0),
+             beta=rnorm(8,0,0.0),
              N=N
         )
       )
@@ -109,7 +130,7 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
     
     if(stockRecruit & env=='none'){
       return(
-        list(c=c(runif(1,0,5),rnorm(1,0,0.01)),
+        list(c=c(runif(1,0,3),-0.01),
              N=N
         )
       )
@@ -117,7 +138,7 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
     
     if(stockRecruit & env=='pca'){
       return(
-        list(c=c(runif(1,0,5),rnorm(1,0,0.01)),
+        list(c=c(runif(1,0,3),-0.01),
              beta=rnorm(5,0,0.01),
              N=N
         )
@@ -134,7 +155,7 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
     
     if(!stockRecruit & env %in% c('mean','extreme')){
       return(
-        list(beta=rnorm(8,0,0.01),
+        list(beta=rnorm(8,0,0.0),
               N=N
         )
       )
@@ -160,12 +181,12 @@ runModel<-function(stockRecruit=F,env='none',randomYear=F,
       }
     }
   
-  ni=15000
-  nt=5
-  nb=10000
+  ni=30000
+  nt=30
+  nb=15000
   nc=3
   
-  out<-jags(win.data,inits,params,"~/trout_yoy/abundanceModel.txt",n.chains=nc,n.iter=ni,
+  out<-jags(win.data,inits=inits,params,"~/trout_yoy/abundanceModel.txt",n.chains=nc,n.iter=ni,
             n.thin=nt,n.burnin=nb)
   saveRDS(out,file.path(resultsDir,paste0("modelOutput/SpeciesRiverSeparate/",outName,".rds")))
   

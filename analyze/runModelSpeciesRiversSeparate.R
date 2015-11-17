@@ -1,5 +1,5 @@
-source('~/trout_yoy/createModelFunctionSpeciesRiversSeparate.R')
-source("~/trout_yoy/analysis/runModelFunctionSpeciesRiversSeparate.R")
+source('~/trout_yoy/createModelFunctionSpeciesRiversSeparate.R',local=T)
+source("~/trout_yoy/analysis/runModelFunctionSpeciesRiversSeparate.R",local=T)
 for(species in c('bkt','bnt')){
   for(r in 1:4){
     for(sr in c(T,F)){

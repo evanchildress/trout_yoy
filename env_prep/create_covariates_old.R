@@ -8,7 +8,7 @@ env.cov<-function(covariate,month,threshold=NA,high.low=NA,
   if(!covariate %in% c('discharge','temperature')){
     stop("covariate must equal 'discharge' or 'temperature'")}
   
-  if(covariate=='discharge'){data<-dailyDischarge}
+  if(covariate=='discharge'){data<-ed}
   if(covariate=='temperature'){data<-ed}
   
   data<-data[date >= as.Date(paste0(start_year-1,"-10-01")) & 
@@ -24,10 +24,10 @@ env.cov<-function(covariate,month,threshold=NA,high.low=NA,
 
 
   if(!high.low %in% c('high','low')){
-    stop("high.low must equal 'high' or 'low' defining whether the event is a high or low extreme")}
+    stop("covariate must equal 'high' or 'low' defining whether the event is a high or low extreme")}
   
   if(!freq.dur %in% c('frequency','duration')){
-    stop("freq.dur must equal 'frequency' or 'duration' defining whether the function returns the number of days when the threshold is crossed (duration) or the number of times(frequency)")}
+    stop("covariate must equal 'frequency' or 'duration' defining whether the function returns the number of days when the threshold is crossed (duration) or the number of times(frequency)")}
 
   if(covariate == 'discharge' & (is.na(threshold) | threshold<0 | threshold > 1)){
     stop("for discharge covariates threshold must be a number between 0 and 1 representing the quantile definition of an extreme event")
@@ -77,17 +77,16 @@ env.cov<-function(covariate,month,threshold=NA,high.low=NA,
   return(result)
 }
 
-covInt<-function()
 
-covariates<-array(dim=c(end_year-start_year+1,4,length(names(covariate_inputs))+2))
+covariates<-array(dim=c(end_year-start_year+1,4,length(names(covariate_inputs_bkt))+2))
 dimnames(covariates)<-list(start_year:end_year,
                            unique(ed$rivers),
-                           c(names(covariate_inputs),
+                           c(names(covariate_inputs_bkt),
                              "summerTempHighRes",
                              "summerTempMeanHighRes"))
 
-for(i in 1:length(names(covariate_inputs))){
-  covariates[,,i]<-do.call(env.cov,covariate_inputs[[i]])
+for(i in 1:length(names(covariate_inputs_bkt))){
+  covariates[,,i]<-do.call(env.cov,covariate_inputs_bkt[[i]])
 }
 
 covariates[,,"summerTempHighRes"]<-apply(summerT,2,
@@ -96,7 +95,7 @@ covariates[,,"summerTempMeanHighRes"]<-apply(meanSummerT,2,
                                    function(x){return(scale(x)[,1])})
 
 
-assign('covariates',covariates,env=shared_data)
-saveRDS(covariates,"~/process-data/data_store/processed_data/covariates.rds")
+assign('covariatesOld',covariates,env=shared_data)
+saveRDS(covariates,"~/process-data/data_store/processed_data/covariatesOld.rds")
 
 
