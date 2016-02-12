@@ -5,9 +5,10 @@ end_year <- 2014
 
 do <- list(
 	data_prep = c(
-		'load_data.R',
-    'create_no_catch.R',
-    'create_hatch_year.R',
+# 		'load_data.R',
+#     'create_no_catch.R',
+#     'create_hatch_year.R',
+	  'getOsenseiData.R'
     'create_abundance_arrays_by_section.R',
     'create_abundance_arrays_by_river.R',
     'create_detection_array.R',
@@ -17,7 +18,7 @@ do <- list(
     'load_data.R',
     'add_early_trib_predictions.R',
     
-    #need to run these only if there are changes to the input files
+    #need to run these only if there are changes to the input files, this creates high res env tables in db
      #'importHighResTemp.R', 
      #'fillHighResTemps.R',
     'loadHighResEnv.R',#loads highResEnv from db if it isn't created in the above two scripts
@@ -31,11 +32,10 @@ do <- list(
     'createHighResTempCovariates.R',
     
     'covariate_inputs.R',
-    'create_covariates.R',
+    'create_covariates.R'
     #'covariate_inputs_bnt.R',
     #'create_covariates_bnt.R',
     #'create_covariates_old.R'
-    #,'create_loess_covariates.R' #not functional and abandoned
   ),
   save = 'saveData.R',
   
@@ -62,7 +62,7 @@ for(stage in names(do)){
 			expr= {
 				s <- file.path(root,stage,script)
 				cat(s,"\n")
-				source(file=s, local=TRUE, echo=TRUE, verbose=TRUE)
+				source(file=s, local=TRUE, echo=F, verbose=T)
 			}
 		)
 		rm(envir=temp, list='shared_data')

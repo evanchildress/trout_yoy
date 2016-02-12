@@ -31,7 +31,7 @@ beta[8]~dnorm(0,0.001)T(-3,3)
               N[j]~dpois(lambda[j]*adultDATA[j])
                 log(lambda[j])<-
                             #stock-recruit
-                            c[1]+c[2]*adultDATAcentered[j]#+c[3]*pow(adultDATA[j],2)
+                            c[1]+c[2]*adultDATAcentered[j]
   
                             #environmental covariates
                             +beta[1]*covariates[j,1]+beta[7]*pow(covariates[j,1],2)
@@ -179,7 +179,8 @@ beta[8]~dnorm(0,0.001)T(-3,3)
                             c[1]+c[2]*adultDATAcentered[j]#+pow(adultDATA[j],2)*c[3]#+c[3]*otherSpDATA[j]
                             
                             #environmental covariates
-                            +beta[1]*covariates[j,1]+beta[7]*pow(covariates[j,1],2)
+                            +beta[1]*covariates[j,1]+
+                             beta[7]*pow(covariates[j,1],2)
   
                             #extreme covariates (either this or the means one should be commented out)
                             +beta[2]*(covariates[j,2])#winter flows>0.99

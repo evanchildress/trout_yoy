@@ -1,0 +1,40 @@
+﻿
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+# Your branch is up-to-date with 'trout_yoy/master'.
+#
+# Changes to be committed:
+#	modified:   README.R
+#	modified:   abundanceModel.txt
+#	modified:   analysis/runModelFunctionSpeciesRiversSeparate.R
+#	modified:   analysis/runModelSpeciesRiversSeparate.R
+#	new file:   analyze/N.R
+#	new file:   analyze/NextremeStock.R
+#	renamed:    compareRmseSpeciesRiversSeparate.R -> analyze/compareRmseSpeciesRiversSeparate.R
+#	new file:   analyze/envCovariates.R
+#	new file:   analyze/envCovariatesProportionalChange.R
+#	renamed:    analysis/posteriorCorrleations.R -> analyze/posteriorCorrelations.R
+#	new file:   analyze/runModelSpeciesRiversSeparate.R
+#	new file:   analyze/stockRecruit.R
+#	modified:   compareRmseSpeciesSeparate.R
+#	modified:   createModelFunctionSpeciesRiversSeparate.R
+#	new file:   createModelFunctionSpeciesRiversSeparateCenteredInt.R
+#	new file:   createModelFunctionSpeciesRiversSeparateWbAdjusted.R
+#	new file:   env_prep/convertDepthToDischarge.R
+#	new file:   env_prep/covariateInputsForComparison.R
+#	modified:   env_prep/covariate_inputs.R
+#	modified:   env_prep/createHighResTempCovariates.R
+#	modified:   env_prep/create_covariates.R
+#	new file:   env_prep/create_covariates_old.R
+#	new file:   env_prep/fillHighResDepths.R
+#	modified:   env_prep/importHighResTemp.R
+#	new file:   env_prep/loadHighResEnv.R
+#	new file:   env_prep/predictTribDischargeFromWestBrook.R
+#	new file:   env_prep/predictWestBrookDischarge.R
+#	modified:   save/saveData.R
+#	modified:   shared_data.R
+#	new file:   variabilityBySection.R
+#	new file:   wbMap.png
+#
+

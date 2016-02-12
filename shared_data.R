@@ -5,6 +5,7 @@ library(parallel)
 library(reshape2)
 library(ggplot2)
 require(readxl)
+library(getWBData)
 #library(cruftery)
 
 options(stringsAsFactors=FALSE)
