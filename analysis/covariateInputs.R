@@ -46,7 +46,12 @@ covariate_inputs<-list(fall_discharge = list(covariate = "discharge",
                                                 threshold=0.98,
                                                 high.low = "high",
                                                 freq.dur = "duration",
-                                                month = c(9,10,11))
+                                                month = c(9,10,11)),
+                      fall_low = list(covariate = "discharge",
+                                         threshold=0.02,
+                                         high.low = "low",
+                                         freq.dur = "duration",
+                                         month = c(9,10,11))
 )
 
 if(exists("shared_data")){

@@ -1,68 +1,54 @@
 model{
     #Priors
     #State process
-      
-        
-          for(f in 1:5){
-  #covariate betas
-            beta[f]~dnorm(0,0.01)
-          }
-  #stock-recruit
-          c[1]~dunif(0,3)
-          c[2]~dnorm(0,0.001)T(-0.1,0.1)
-          #c[3]~dnorm(0,0.01)
-
-  
+#Priors
+#State process
+  for(r in 1:nRivers){
+  #environmental betas
+    for(b in 1:8){
+      beta[b,r]~dnorm(0,0.01)T(-3,3)
+    }
+  #stock recruit
+    c[1,r]~dunif(0,3)
+    c[2,r]~dnorm(0,0.01)T(-0.1,0.1)
+    c[3,r]~dnorm(0,0.01)
+    }
     #Likelihood for yoy
+ #Likelihood for yoy
+  for(r in 1:nRivers){
+      for(j in 1:nYears){
+      N[j,r]~dpois(lambda[j,r]*adultDATA[j,r])
+      log(lambda[j,r])<-
+      #stock-recruit
+      c[1,r]
+      +c[2,r]*adultDATA[j,r]
+      +c[3,r]*summerAdultDATA[j,r]
       
-        
-          for(j in 1:nsamples){
-              N[j]~dpois(lambda[j]*adultDATA[j])
-                log(lambda[j])<-
-                            #stock-recruit
-                            c[1]+c[2]*adultDATAcentered[j]#+c[3]*pow(adultDATA[j],2)
-  
-                            #environmental covariates (based on pca in west brook)
-                            +beta[1]*covariates[j,1]
-                            +beta[2]*covariates[j,2]
-                            +beta[3]*covariates[j,3]
-                            +beta[4]*covariates[j,4]
-                            +beta[5]*covariates[j,5]
-#                             +beta[6]*covariates[j,6]
-#                             +beta[7]*covariates[j,7]
-#                             +beta[8]*covariates[j,8]
-#                             +beta[9]*covariates[j,9]
-
-  
-                yDATA[j]~dbin(p[j],N[j])
-
-              nPredict[j]<-lambda[j]*adultDATA[j]
-  
-          }
-         
-    
-    #Derived output
+      #environmental covariates
+      #+beta[1,r]*covariates[j,r,1]+beta[7,r]*pow(covariates[j,r,1],2)
+      #+beta[1,r]*covariates[j,r,11]+beta[7,r]*covariates[j,r,12]
       
-        
-          for(j in 1:nsamples){
-                   #calculate expected values and chi-squared for observed
-                   yExp[j]<- N[j]*p[j]
-                   E[j]<-pow((yDATA[j]-yExp[j]),2)/
-                                    (yExp[j]+0.5)
-                
-                   #generate new data with estimated parameters  
-                   NNew[j]~dpois(lambda[j]*adultDATA[j])
-                   yNew[j]~dbin(p[j],NNew[j])
-                   ENew[j]<-pow((yNew[j]-yExp[j]),2)/
-                                          (yExp[j]+0.5)
-  
-                   #error to compute rmse
-                   Ey[j]<-pow(yDATA[j]-yExp[j],2)
-                   pCheck1[j]<-yDATA[j] > yExp[j]
-          }
-          fit<-sum(E[])
-          fitNew<-sum(ENew[])
-          pCheck<-mean(pCheck1[])
-         
-        #rmse[sp]<-pow(sum(Ey[,])/(nsamples*4),-2)
+      #mean covariates
+      +beta[2,r]*(covariates[j,r,2])#winter high flow
+      +beta[3,r]*covariates[j,r,3]#spring floods
+      +beta[4,r]*covariates[j,r,4]#summer low flow
+      +beta[5,r]*covariates[j,r,5]#summer high temps
+      +beta[6,r]*covariates[j,r,5]*covariates[j,r,4]#summer mean flow/temp interaction
+      +beta[8,r]*covariates[j,r,10] #winter low flow
+      
+      yDATA[j,r]~dbin(p[j,r],N[j,r])
+      
+      nPredict[j,r]<-lambda[j,r]*adultDATA[j,r]
+      
+    }
+  }  
+
+ for(r in 1:nRivers){       
+  for(j in 1:nYears){
+      yExp[j,r]<-lambda[j,r]*adultDATA[j,r]*p[j,r]
+      Ey[j,r]<-pow(yDATA[j,r]-yExp[j,r],2)
+}
+  rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
+} 
+     
   }
