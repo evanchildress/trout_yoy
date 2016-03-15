@@ -16,6 +16,19 @@ if(stockRecruit & env=='mean'){
     c[1,r]~dunif(0,3)
     c[2,r]~dnorm(0,0.01)
   }
+#detection prior (posterior should be same as prior)
+
+for(r in 1:nRivers){
+  for(b in 1:3){
+    pPriorTau[r,b]<-1/pow(pPriorSd[r,b],-2)
+    pBeta[r,b]~dnorm(pPriorMean[r,b],pPriorTau[r,b])
+  }
+  
+  for(j in 1:nYears){
+    logitP[j,r]<-pBeta[r,1]+pBeta[r,2]*meanLength[j,r]+pBeta[r,3]*flowForP[j,r]
+    p[j,r]<-1/(1+exp(-logitP[j,r]))
+  }
+}
 
 #Likelihood for yoy
 for(r in 1:nRivers){
@@ -33,8 +46,8 @@ for(r in 1:nRivers){
       +beta[3,r]*covariates[j,r,7]#spring mean flow
       +beta[4,r]*covariates[j,r,8]#summer
       +beta[5,r]*covariates[j,r,9]#summer mean flow and temp
-      #+beta[6,r]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
-      #+beta[8,r]*pow(covariates[j,r,6],2)
+      +beta[6,r]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
+      +beta[8,r]*pow(covariates[j,r,6],2)
 
     yDATA[j,r]~dbin(p[j,r],N[j,r])
 
@@ -72,8 +85,6 @@ for(r in 1:nRivers){
     }
     rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
   }
-
-  overallRmse<-sum(rmse[])
   }",file="~/trout_yoy/abundanceModel.txt")
 }
 
@@ -104,8 +115,8 @@ if(!stockRecruit & env=='mean'){
       +beta[3,r]*covariates[j,r,7]#spring mean flow
       +beta[4,r]*covariates[j,r,8]#summer
       +beta[5,r]*covariates[j,r,9]#summer mean flow and temp
-      #+beta[6,r]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
-      #+beta[8,r]*pow(covariates[j,r,6],2)
+      +beta[6,r]*covariates[j,r,8]*covariates[j,r,9]#summer mean flow/temp interaction
+      +beta[8,r]*pow(covariates[j,r,6],2)
       
       yDATA[j,r]~dbin(p[j,r],N[j,r])
       
@@ -121,7 +132,7 @@ if(!stockRecruit & env=='mean'){
 }
   rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
 }
-  overallRmse<-sum(rmse[])
+
 }",file="~/trout_yoy/abundanceModel.txt")
 }
 
@@ -134,12 +145,11 @@ if(stockRecruit & env=='extreme'){
   for(r in 1:nRivers){
   #environmental betas
     for(b in 1:8){
-      beta[b,r]~dnorm(0,0.01)
+      beta[b,r]~dnorm(0,0.01)T(-3,3)
     }
   #stock recruit
     c[1,r]~dunif(0,3)
     c[2,r]~dnorm(0,0.01)
-    #c[3,r]~dnorm(0,0.01)
     }
     #Likelihood for yoy
  #Likelihood for yoy
@@ -150,7 +160,6 @@ if(stockRecruit & env=='extreme'){
       #stock-recruit
       c[1,r]
       +c[2,r]*adultDATA[j,r]
-      #+c[3,r]*summerAdultDATA[j,r]
       
       #environmental covariates
       #+beta[1,r]*covariates[j,r,1]+beta[7,r]*pow(covariates[j,r,1],2)
@@ -161,8 +170,8 @@ if(stockRecruit & env=='extreme'){
       +beta[3,r]*covariates[j,r,3]#spring floods
       +beta[4,r]*covariates[j,r,4]#summer low flow
       +beta[5,r]*covariates[j,r,5]#summer high temps
-      #+beta[6,r]*covariates[j,r,5]*covariates[j,r,4]#summer mean flow/temp interaction
-      #+beta[8,r]*covariates[j,r,10] #winter low flow
+      +beta[6,r]*covariates[j,r,5]*covariates[j,r,4]#summer mean flow/temp interaction
+      +beta[8,r]*covariates[j,r,10] #winter low flow
       
       yDATA[j,r]~dbin(p[j,r],N[j,r])
       
@@ -178,7 +187,7 @@ if(stockRecruit & env=='extreme'){
 }
   rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
 } 
-    overallRmse<-sum(rmse[])   
+     
   }",file="~/trout_yoy/abundanceModel.txt")
 }
 
@@ -210,8 +219,8 @@ if(!stockRecruit & env=='extreme'){
       +beta[3,r]*covariates[j,r,3]#spring floods
       +beta[4,r]*covariates[j,r,4]#summer low flow
       +beta[5,r]*covariates[j,r,5]#summer high temps
-      #+beta[6,r]*covariates[j,r,5]*covariates[j,r,4]#summer mean flow/temp interaction
-      #+beta[8,r]*covariates[j,r,10] #winter low flow
+      +beta[6,r]*covariates[j,r,5]*covariates[j,r,4]#summer mean flow/temp interaction
+      +beta[8,r]*covariates[j,r,10] #winter low flow
       
       yDATA[j,r]~dbin(p[j,r],N[j,r])
       
@@ -226,8 +235,7 @@ if(!stockRecruit & env=='extreme'){
       Ey[j,r]<-pow(yDATA[j,r]-yExp[j,r],2)
 }
   rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
- }
-  overallRmse<-sum(rmse[])
+}
 }",file="~/trout_yoy/abundanceModel.txt")
 }
 
@@ -263,8 +271,7 @@ if(stockRecruit & env=='none'){
         Ey[j,r]<-pow(yDATA[j,r]-yExp[j,r],2)
         }
         rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
- }
-  overallRmse<-sum(rmse[])
+}
 }",file="~/trout_yoy/abundanceModel.txt")
 }
 
@@ -310,8 +317,7 @@ if(stockRecruit & env=='pca'){
       Ey[j,r]<-pow(yDATA[j,r]-yExp[j,r],2)
       }
       rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
- }
-  overallRmse<-sum(rmse[])
+}
 }",file="~/trout_yoy/abundanceModel.txt")
 }
 
@@ -353,8 +359,7 @@ if(!stockRecruit & env=='pca'){
       Ey[j,r]<-pow(yDATA[j,r]-yExp[j,r],2)
 }
   rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
- }
-  overallRmse<-sum(rmse[])
+}
 }",file="~/trout_yoy/abundanceModel.txt")
 }
 
@@ -390,8 +395,7 @@ if(randomYear){
       Ey[j,r]<-pow(yDATA[j,r]-yExp[j,r],2)
 }
   rmse[r]<-pow(sum(Ey[,r])/nYears,0.5)
- }
-  overallRmse<-sum(rmse[])
+}
 }",file="~/trout_yoy/abundanceModel.txt")
 }
 }

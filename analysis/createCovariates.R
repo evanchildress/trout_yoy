@@ -1,19 +1,23 @@
 reconnect()
-t<-tbl(conDplyr,"data_hourly_temperature") %>% collect() %>% data.table() %>% mutate(date=as.Date(datetime))
+#t<-tbl(conDplyr,"data_hourly_temperature") %>% collect() %>% data.table() %>% mutate(date=as.Date(datetime))
+#saveRDS(t,"cjsInputs/tempData.rds")
+t<-readRDS("cjsInputs/tempData.rds")
+# if(qType=="flowExtension"){
+#   q<-tbl(conDplyr,"data_flow_extension") %>% collect() %>% data.table() %>%
+#     .[,date:=as.Date(date)]
+# # just using the flow extension for all the rivers, but the function requires river specific discharge
+#   q<-rbind(q,
+#            q %>% mutate(river="wb mitchell"),
+#            q %>% mutate(river="wb jimmy"),
+#            q %>% mutate(river="wb obear")) %>%
+#     setnames("qPredicted","discharge") %>%
+#     mutate(date=as.Date(date))} else {
+#       
+#   q<-tbl(conDplyr,"data_daily_discharge") %>% collect() %>% data.table()
+#     }
 
-if(qType=="flowExtension"){
-  q<-tbl(conDplyr,"data_flow_extension") %>% collect() %>% data.table() %>%
-    .[,date:=as.Date(date)]
-# just using the flow extension for all the rivers, but the function requires river specific discharge
-  q<-rbind(q,
-           q %>% mutate(river="wb mitchell"),
-           q %>% mutate(river="wb jimmy"),
-           q %>% mutate(river="wb obear")) %>%
-    setnames("qPredicted","discharge") %>%
-    mutate(date=as.Date(date))} else {
-      
-  q<-tbl(conDplyr,"data_daily_discharge") %>% collect() %>% data.table()
-}
+#saveRDS(q,"cjsInputs/dischargeData.rds")
+q<-readRDS("cjsInputs/dischargeData.rds")
 
 
 # q<-tbl(src_postgres("wb",user="postgres"),"data_predicted_discharge") %>% collect() %>% data.table() %>%
@@ -109,9 +113,23 @@ dimnames(covariates)<-list(years,
                            names(covariate_inputs))
 
 
-for(i in 1:length(names(covariate_inputs))){
+for(i in c(1:length(names(covariate_inputs)))){
   covariates[,,i]<-do.call(env.cov,covariate_inputs[[i]])
 }
 
+#temporary while temps aren't available for 2015
+# for(i in c(1:4,6:8,10:length(names(covariate_inputs)))){
+#   covariates[,,i]<-do.call(env.cov,covariate_inputs[[i]])
+# }
+# for(i in c(5,9)){
+#   end_year<-2014
+#   covariates[1:13,,i]<-do.call(env.cov,covariate_inputs[[i]])
+#   covariates[14,,i]<-colMeans(covariates[1:13,,i])
+# }
+
+
 jagsData$covariates<-covariates
-saveRDS(jagsData,"cjsInputs/jagsData.rds")
+saveRDS(jagsData,paste0("cjsInputs/jagsData",
+                        toupper(substr(whichSpecies,1,1)),
+                        substr(whichSpecies,2,nchar(whichSpecies)),
+                        ".rds"))

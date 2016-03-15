@@ -1,22 +1,18 @@
 
 #get the raw data from the server
-# trout<-createCoreData(includeUntagged=T) %>%
-#        addTagProperties() %>%
-#        filter(species==whichSpecies &
-#                 area %in% c("inside","trib")&
-#                 detectionDate>as.POSIXct("2002-01-01")) %>%
-#        addSampleProperties() %>%
-#        addEnvironmental(sampleFlow=T) %>%
-#        mutate(stage=as.numeric(year+season/4-0.25-cohort>1)+1) %>%
-#        mutate(riverName=river) %>%
-#        mutate(river=as.numeric(factor(river,levels=c('west brook','wb jimmy','wb mitchell','wb obear'),ordered=T))) %>%
-#        data.table()
-# 
-# saveRDS(trout,paste0("cjsInputs/",whichSpecies,"Core.rds"))
-trout<-readRDS(paste0("cjsInputs/",whichSpecies,"Core.rds"))
-
+trout<-createCoreData(includeUntagged=T) %>%
+       addTagProperties() %>%
+       filter(species==whichSpecies &
+                area %in% c("inside","trib")&
+                detectionDate>as.POSIXct("2002-01-01")) %>%
+       addSampleProperties() %>%
+       addEnvironmental(sampleFlow=T) %>%
+       mutate(stage=as.numeric(year+season/4-0.25-cohort>1)+1) %>%
+       mutate(riverName=river) %>%
+       mutate(river=as.numeric(factor(river,levels=c('west brook','wb jimmy','wb mitchell','wb obear'),ordered=T))) %>%
+       data.table()
 nRivers<-length(unique(trout$river))
-  
+
 #make it into a count array
 countArray<-trout[stage==1&season==3,.N,by=list(species,year,river)] %>%
   melt(id.vars=c("species","year","river")) %>%
@@ -25,44 +21,43 @@ countArray[is.na(countArray)]<-0
 
 
 #get detection probabilities ready
-p<-trout[stage==1&season==3,.(meanLength=mean(observedLength,na.rm=T)),by=.(river,year,species)] %>%
+meanLength<-trout[stage==1&season==3,.(meanLength=mean(observedLength,na.rm=T)),by=.(river,year,species)] %>%
     setkey(year) %>%
     .[,.SD[data.table(year=2002:2015,key="year")],by=.(river,species)] %>%
     .[,riverMean:=mean(meanLength,na.rm=T),by=river] %>%
     .[is.na(meanLength),meanLength:=riverMean] %>%
-    .[,riverMean:=NULL] %>%
-    data.frame()
-bktStds<-readRDS(paste0("cjsInputs/",whichSpecies,"YoyStandards.rds") )
-bktStds$length<-bktStds$length%>%
-  mutate(river=as.numeric(factor(river,levels=c('west brook','wb jimmy','wb mitchell','wb obear'),ordered=T))) %>%
-  rename(stdLength=meanLength) %>%
-  mutate(species=whichSpecies)
-p <- left_join(p,bktStds$length,by=c("river","species")) %>%
-              mutate(meanLengthStd=(meanLength-stdLength)/sdLength) %>%
-              dplyr::select(river,year,species,meanLengthStd)
-p<- p %>% 
-   left_join(trout[stage==1&season==3,.(flowForP=mean(flowForP)),by=.(river,year)] %>%
-               data.frame() %>%
-               mutate(flowForP=(flowForP-bktStds$flowForP$meanFlow)/bktStds$flowForP$sdFlow)
-             ,by=c("river","year")) %>%
-  data.table() %>%
-  .[,meanFlowForP:=mean(flowForP,na.rm=T),by=river] %>%
-  .[is.na(flowForP),flowForP:=meanFlowForP] %>%
-  .[,meanFlowForP:=NULL] %>%
-  data.frame()
+    .[,":="(riverMean=NULL,
+            species=NULL)] %>%
+    data.table() %>%
+    setkey(river)
 
-p<-readRDS(paste0("cjsInputs/",whichSpecies,"YoyP.rds")) %>% 
-  dplyr::select(mean,river,beta) %>% 
-  spread(beta,mean) %>%
-  mutate(river=as.numeric(river)) %>%
-  right_join(p,by='river') %>%
-  data.table() %>%
-  setnames(c("1","2","3"),paste0("beta",1:3)) %>%
-  mutate(p=1/(1+exp(-(beta1+beta2*meanLengthStd+beta3*flowForP)))) %>%
-  filter(species==whichSpecies) %>%
-  dplyr::select(year,river,p) %>%
-  melt(id.vars=c("year","river")) %>%
-  acast(year~river)
+bktStds<-readRDS(paste0("cjsInputs/",whichSpecies,"YoyStandards.rds") )
+
+meanLength<-bktStds$length %>%
+            data.table() %>%
+            setnames("meanLength","stdLength") %>%
+            .[,river:=c(2,3,4,1)] %>%
+            setkey(river) %>%
+            .[meanLength] %>%
+            .[,meanLength:=(meanLength-stdLength)/sdLength] %>%
+            .[,":="(stdLength=NULL,
+                    sdLength=NULL)] %>%
+            melt(id.vars=c("river","year")) %>%
+            acast(year~river)
+flowForP<-trout[stage==1&season==3,.(flowForP=mean(flowForP)),by=.(river,year)] %>%
+               .[,flowForP:=(flowForP-bktStds$flowForP$meanFlow)/bktStds$flowForP$sdFlow] %>%
+                melt(id.vars=c("river","year")) %>%
+                acast(year~river) 
+
+pPriorMean<-readRDS(paste0("cjsInputs/",whichSpecies,"YoyPPosterior.rds")) %>% 
+  .[,.(mean,river,beta)] %>%
+  melt(id.vars=c("river","beta")) %>%
+  acast(river~beta)
+
+pPriorSd<-readRDS(paste0("cjsInputs/",whichSpecies,"YoyPPosterior.rds")) %>% 
+  .[,.(sd,river,beta)] %>%
+  melt(id.vars=c("river","beta")) %>%
+  acast(river~beta)
 
 adults<-readRDS(paste0("cjsInputs/",whichSpecies,"Alive.rds")) %>%
   .[,":="(year=as.numeric(year),
@@ -134,7 +129,10 @@ years<-as.numeric(dimnames(countArray)[[1]])
 jagsData<-list(yDATA=countArray[,,1],
                adultDATA=fallAdults,
                summerAdultDATA=summerAdults,
-               p=p,
+               pPriorMean=pPriorMean,
+               pPriorSd=pPriorSd,
+               meanLength=meanLength,
+               flowForP=flowForP,
                nRivers=dim(countArray)[2],
                nYears=dim(countArray)[1],
                otherSpeciesSummerAdultDATA=otherSpeciesSummerAdults)

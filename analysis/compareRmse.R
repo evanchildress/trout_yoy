@@ -1,10 +1,14 @@
-y<-readRDS("cjsInputs/jagsDATA.rds")$y
+nRivers<-c(4,3)[which(whichSpecies==c("bkt","bnt"))]
 
-rmse<-function(fileName){
+y<-readRDS(paste0("cjsInputs/jagsData",toupper(substr(whichSpecies,1,1)),substr(whichSpecies,2,nchar(whichSpecies)),".rds"))$y
+
+rmse<-function(fileName,standardize=T){
   data<-readRDS(paste0("results/modelOutput/",fileName))$BUGSoutput$sims.list
   
-  nYears<-13
-  nRivers<-4
+  randomN<-readRDS(paste0("results/modelOutput/randomYear",whichSpecies,".rds"))$BUGSoutput$sims.list$N %>%
+    apply(3,mean)
+  
+  nYears<-14
   yExp<-data$yExp
   n<-dim(yExp)[1]
   
@@ -16,7 +20,7 @@ rmse<-function(fileName){
     return(result)
   }
   rmse<-apply(yExp,1,byRow)
-  
+  if(standardize){rmse<-rmse/randomN}
   return(rmse)
 }
 
@@ -55,17 +59,33 @@ pCheck<-function(fileName){
 # }
 # }
 # dev.off()
-toEvaluate<-c("randomYearBkt.rds","meanBkt.rds","extremeBkt.rds","stockRecruitBkt.rds",
-              "meanStockRecruitBkt.rds","extremeStockRecruitBkt.rds")
+makeFileName<-function(models,species){
+  species<-paste0(toupper(substr(species,1,1)),substr(species,2,nchar(species)))
+  return(paste0(models,species,".rds"))
+}
 
-rmseSummary<-array(NA,dim=c(length(toEvaluate),4))
+toEvaluate<-makeFileName(c("randomYear","mean","extreme","stockRecruit",
+              "meanStockRecruit","extremeStockRecruit"),whichSpecies)
+
+rmseSummary<-array(NA,dim=c(length(toEvaluate),nRivers+1))
 rownames(rmseSummary)<-unlist(strsplit(toEvaluate,".rds"))
 summarize<-function(x){
   return(c(mean(x),quantile(x,probs=c(0.025,0.975))))
 }
 
-for(e in 1:length(toEvaluate)){
-  rmseSummary[e,]<-apply(rmse(toEvaluate[e]),1,mean)
+dic<-array(NA,dim=c(length(toEvaluate),1))
+rownames(dic)<-unlist(strsplit(toEvaluate,".rds"))
+
+for(m in 1:length(toEvaluate)){
+  overallRmse<- mean(readRDS(paste0("results/modelOutput/",toEvaluate[m]))$BUGSoutput$sims.list$overallRmse)/
+    mean(apply(readRDS(paste0("results/modelOutput/",toEvaluate[m]))$BUGSoutput$sims.list$N,c(1,2),sum))
+  rmseSummary[m,]<-c(apply(rmse(toEvaluate[m]),1,mean),overallRmse)
+  dic[m]<-readRDS(paste0("results/modelOutput/",toEvaluate[m]))$BUGSoutput$DIC
 }
+
+
+
+
+
 
 

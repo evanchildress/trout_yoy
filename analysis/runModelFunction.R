@@ -77,14 +77,14 @@ runModel<-function(data,stockRecruit=F,env='none',randomYear=F,species){
   inits<-function(){list(N=N)
   }
   
-  params<-c("N","c","nPredict","rmse","yExp")
+  params<-c("N","c","nPredict","rmse","yExp","overallRmse")
   if(env!='none'){
       params<-c(params,"beta")
     }
   
-  ni=10000
-  nt=5
-  nb=7000
+  ni=18000
+  nt=2
+  nb=15000
   nc=3
   
   out<-jags(data,inits=inits,params,"~/trout_yoy/abundanceModel.txt",n.chains=nc,n.iter=ni,
