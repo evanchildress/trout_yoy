@@ -124,20 +124,17 @@ predictors<-c("spring_floods","fall_discharge",
                   
                   
 predictorSets<-list(fall=list(#extreme=c("fall_floods","fall_low"),
-                              highOnly="fall_floods",
-                              mean=c("fall_discharge","fall2"),
+                              extreme="fall_floods",
+                              mean=c("fall_discharge"),
                               null=NULL),
-                    winter=list(extreme=c("winter_floods","winter_low"),
-                                highOnly="winter_floods",
-                                mean=c("winter_flow_mean","winter2"),
+                    winter=list(extreme="winter_floods",
+                                mean=c("winter_flow_mean"),
                                 null=NULL),
                     spring=list(extreme="spring_floods",
                                 mean="spring_flow_mean",
                                 null=NULL),
                     summer=list(extreme=c("summer_low","summer_temp"),
                                 mean=c("summer_flow_mean","summer_temp_mean"),
-                                extremeInteraction=c("summer_low","summer_temp","summerIntExtreme"),
-                                meanInteraction=c("summer_flow_mean","summer_temp_mean","summerIntMean"),
                                 null=NULL),
                     stock=list(fall="fallAdults",
                                #combinedFall="combinedFall",
@@ -146,7 +143,7 @@ predictorSets<-list(fall=list(#extreme=c("fall_floods","fall_low"),
                                #bothCombined=c("combinedFall","summerAdults"),
                                #bothPlusOther=c("fallAdults","summerAdults","otherSpeciesSummerAdults"),
                                null=NULL))
-results<-array(NA,dim=c(480,10),dimnames=list(NULL,c(names(predictorSets),"aic","rmse","rsq","nParameters","leaveOneOut")))
+results<-array(NA,dim=c(162,10),dimnames=list(NULL,c(names(predictorSets),"aic","rmse","rsq","nParameters","leaveOneOut")))
 results<-list("west brook"=results,
               "wb jimmy"=results,
               "wb mitchell"=results)

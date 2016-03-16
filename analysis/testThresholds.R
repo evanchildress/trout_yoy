@@ -69,6 +69,12 @@ env.cov<-function(covariate,days,threshold=NA,high.low=NA,
                                                        length(which(get(covariate) <= limit[r]))),
                                                 by=year_of_effect]$V1
       }
+      if(freq.dur=="sumAbove"){result[,r]<-data[river==rivers[r]& day %in% days,
+                                                ifelse(high.low=="high",
+                                                       sum(get(covariate)[which(get(covariate) >= limit[r])]-limit[r]),
+                                                       sum(limit[r]-get(covariate)[which(get(covariate) <= limit[r])])),
+                                                by=year_of_effect]$V1
+      }
     }} else{ #if FUN isn't null
       
       for(r in 1:4){
