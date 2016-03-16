@@ -1,4 +1,6 @@
 library(boot)
+library(data.table)
+library(dplyr)
 AICc<-function(model){
   logLikelihood <- logLik(model)
   df <- attr(logLikelihood, "df")
