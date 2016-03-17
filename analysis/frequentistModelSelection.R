@@ -1,6 +1,4 @@
 library(boot)
-library(data.table)
-library(dplyr)
 AICc<-function(model){
   logLikelihood <- logLik(model)
   df <- attr(logLikelihood, "df")
@@ -66,22 +64,22 @@ otherSpeciesSummerAdult<-jagsData$otherSpeciesSummerAdultDATA %>%
   setkey(river,year)
 
 data<-popEst[env] %>%
-      setkey(river,year) %>%
-      .[adult] %>%
-      setkey(river,year) %>%
-      .[summerAdult] %>%
-      setkey(river,year) %>%
-      otherSpeciesSummerAdult[.] %>%
-      .[,logPerCapita:=log(popEst/fallAdults)] %>%
-      .[is.na(otherSpeciesSummerAdults),otherSpeciesSummerAdults:=0] %>%
-      .[river!="wb obear",combinedFall:=sum(fallAdults),by=year] %>%
-      .[river=="wb obear",combinedFall:=100]
+  setkey(river,year) %>%
+  .[adult] %>%
+  setkey(river,year) %>%
+  .[summerAdult] %>%
+  setkey(river,year) %>%
+  otherSpeciesSummerAdult[.] %>%
+  .[,logPerCapita:=log(popEst/fallAdults)] %>%
+  .[is.na(otherSpeciesSummerAdults),otherSpeciesSummerAdults:=0] %>%
+  .[river!="wb obear",combinedFall:=sum(fallAdults),by=year] %>%
+  .[river=="wb obear",combinedFall:=100]
 
 predictors<-c("spring_floods","fall_discharge",
-        "winter_floods","summer_low","summer_temp",
-        "fall2","fall_floods","fall_low","winter_low",
-        "fallAdults","summerAdults","winter_flow_mean","spring_flow_mean","summer_flow_mean",
-        "summer_temp_mean","winter2")
+              "winter_floods","summer_low","summer_temp",
+              "fall2","fall_floods","fall_low","winter_low",
+              "fallAdults","summerAdults","winter_flow_mean","spring_flow_mean","summer_flow_mean",
+              "summer_temp_mean","winter2")
 
 # for(r in 1:4){
 #   for(sp in 1:2){
@@ -123,33 +121,39 @@ predictors<-c("spring_floods","fall_discharge",
 #                                 fall_low+winter_low+fallAdults+
 #                                 summerAdults+winter_flow_mean+spring_flow_mean+
 #                                 summer_flow_mean+summer_temp_mean+winter2,
-                  
-                  
-predictorSets<-list(fall=list(#extreme=c("fall_floods","fall_low"),
-                              extreme="fall_floods",
+
+
+predictorSets<-list(fall=list(extreme="fall_floods",
                               mean=c("fall_discharge"),
+                              extremeRiver="fall_floods*river",
+                              mean=c("fall_discharge*river"),
                               null=NULL),
-                    winter=list(extreme="winter_floods",
-                                mean=c("winter_flow_mean"),
-                                null=NULL),
-                    spring=list(extreme="spring_floods",
-                                mean="spring_flow_mean",
-                                null=NULL),
-                    summer=list(extreme=c("summer_low","summer_temp"),
-                                mean=c("summer_flow_mean","summer_temp_mean"),
-                                null=NULL),
-                    stock=list(fall="fallAdults",
-                               #combinedFall="combinedFall",
-                               #summer="summerAdults",
-                               #both=c("fallAdults","summerAdults"),
-                               #bothCombined=c("combinedFall","summerAdults"),
-                               #bothPlusOther=c("fallAdults","summerAdults","otherSpeciesSummerAdults"),
-                               null=NULL))
-results<-array(NA,dim=c(162,10),dimnames=list(NULL,c(names(predictorSets),"aic","rmse","rsq","nParameters","leaveOneOut")))
-results<-list("west brook"=results,
-              "wb jimmy"=results,
-              "wb mitchell"=results)
-if(whichSpecies=="Bkt"){results[["wb obear"]]<-results[["west brook"]]}
+  winter=list(extreme=c("winter_floods"),
+              extremeRiver="winter_floods*river",
+              mean=c("winter_flow_mean"),
+              meanRiver=c("winter_flow_mean*river"),
+              null=NULL),
+  spring=list(extreme="spring_floods",
+              extremeRiver="spring_floods*river",
+              mean="spring_flow_mean",
+              meanRiver="spring_flow_mean*river",
+              null=NULL),
+  summer=list(extreme=c("summer_low","summer_temp"),
+              mean=c("summer_flow_mean","summer_temp_mean"),
+              extremeRiver=c("summer_low*river","summer_temp*river"),
+              meanRiver=c("summer_flow_mean*river","summer_temp_mean*river"),
+              null=NULL),
+  stock=list(fall="fallAdults",
+             fallRiver="fallAdults*river",
+             #combinedFall="combinedFall",
+#              summer="summerAdults",
+#              summerRiver="summerAdults*river",
+#              both=c("fallAdults","summerAdults"),
+#              bothRiver=c("fallAdults*river","summerAdults*river"),
+             #bothCombined=c("combinedFall","summerAdults"),
+             #bothPlusOther=c("fallAdults","summerAdults","otherSpeciesSummerAdults"),
+             null=NULL))
+results<-array(NA,dim=c(3125,10),dimnames=list(NULL,c(names(predictorSets),"aic","rmse","rsq","nParameters","leaveOneOut")))
 
 rmse<-function(model,standardize=T){
   result<-sqrt(sum(model$residuals^2)/length(model$residuals))
@@ -174,8 +178,8 @@ for(b1 in names(predictorSets$fall)){
           model<-formula(paste("logPerCapita~",modelString))
           for(r in unique(data$river)){
             if(whichSpecies=="Bkt"&r=="wb obear"&b5=="bothPlusOther") next
-           fit<-lm(model,data=data[river==r])
-           results[[r]][row,]<-c(b1,b2,b3,b4,b5,AICc(fit),rmse(fit),summary(fit)$r.squared,nParameters,leaveOneOut(fit))
+            fit<-lm(model,data=data)
+            results[row,]<-c(b1,b2,b3,b4,b5,AICc(fit),rmse(fit),summary(fit)$r.squared,nParameters,leaveOneOut(fit))
           }
           row<-row+1
         }
@@ -185,37 +189,28 @@ for(b1 in names(predictorSets$fall)){
 }
 
 
-bestModels<-NULL
-for(r in names(results)){
-  bestModels<-data.table(results[[r]]) %>%
-  .[,river:=r] %>%
-  rbind(bestModels)
-}
+bestModels<-data.table(results)
 
 bestModels<-bestModels[,":="(aic=as.numeric(aic),
                              rmse=as.numeric(rmse),
                              rsq=as.numeric(rsq))] %>%
-            .[,":="(minAic=min(aic,na.rm=T),
-                    minRmse=min(rmse,na.rm=T),
-                    maxRsq=max(rsq,na.rm=T),
-                    minLov=min(leaveOneOut,na.rm=T)),
-              by=river] %>%
-            .[aic<Inf,relativeLik:=exp(-0.5*(aic-minAic))] %>%
-            .[,akaikeWeight:=round(relativeLik/sum(relativeLik,na.rm=T),3),by=river] %>%
-            .[aic-minAic<=2|rmse==minRmse|rsq==maxRsq|akaikeWeight>0.03|
-                (fall=="extreme"&winter=="extreme"&spring=="extreme"&summer=="extremeInteraction"&stock=="both")|
-                (fall=="mean"&winter=="mean"&spring=="mean"&summer=="meanInteraction"&stock=="both")|
-                leaveOneOut==minLov] %>%
-            .[,":="(minAic=NULL,
-                    minRmse=NULL,
-                    maxRsq=NULL,
-                    minLov=NULL,
-                    relativeLik=NULL)] %>%
-            setkey(river,aic)
+  .[,":="(minAic=min(aic,na.rm=T),
+          minRmse=min(rmse,na.rm=T),
+          maxRsq=max(rsq,na.rm=T),
+          minLov=min(leaveOneOut,na.rm=T))] %>%
+  .[aic<Inf,relativeLik:=exp(-0.5*(aic-minAic))] %>%
+  .[,akaikeWeight:=round(relativeLik/sum(relativeLik,na.rm=T),3)] %>%
+  .[aic-minAic<=2|rmse==minRmse|rsq==maxRsq|akaikeWeight>0.03] %>%
+  .[,":="(minAic=NULL,
+          minRmse=NULL,
+          maxRsq=NULL,
+          minLov=NULL,
+          relativeLik=NULL)] %>%
+setkey(aic)
 
 bestFits<-list()
-for(r in unique(bestModels$river)){
-  row<-bestModels[river==r][leaveOneOut==min(leaveOneOut)]
+for(m in 1:nrow(bestModels[akaikeWeight>0.01])){
+  row<-bestModels[m]
   modelString<-paste(c(predictorSets$fall[[row$fall]],
                        predictorSets$winter[[row$winter]],
                        predictorSets$spring[[row$spring]],
@@ -224,12 +219,12 @@ for(r in unique(bestModels$river)){
                      collapse="+")
   if(modelString=="") modelString<-"1"
   model<-formula(paste("logPerCapita~",modelString))
-  fit<-lm(model,data=data[river==r])
-  bestFits[[r]]<-fit
+  fit<-lm(model,data=data)
+  bestFits[[m]]<-fit
 }
 
-extremeFits<-list()
-meanFits<-list()
+# extremeFits<-list()
+# meanFits<-list()
 # tiff.par("results/figures/nFromFrequentist.tif",mfrow=c(4,1))
 # for(r in unique(data$river)){
 #   plot(popEst~year,data=data[river==r],type='l')
@@ -262,4 +257,3 @@ meanFits<-list()
 # 
 # }
 # dev.off()
-setkey(bestModels,river,aic)

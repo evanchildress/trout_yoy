@@ -33,10 +33,7 @@ env.cov<-function(covariate,days,threshold=NA,high.low=NA,
     
     if(!high.low %in% c('high','low')){
       stop("high.low must equal 'high' or 'low' defining whether the event is a high or low extreme")}
-    
-    if(!freq.dur %in% c('frequency','duration')){
-      stop("freq.dur must equal 'frequency' or 'duration' defining whether the function returns the number of days when the threshold is crossed (duration) or the number of times(frequency)")}
-    
+
     if(covariate == 'discharge' & (is.na(threshold) | threshold<0 | threshold > 1)){
       stop("for discharge covariates threshold must be a number between 0 and 1 representing the quantile definition of an extreme event")
     }
@@ -91,7 +88,7 @@ env.cov<-function(covariate,days,threshold=NA,high.low=NA,
   return(result)
 }
 
-for(dur in c(30,45)){
+for(dur in c(45)){
 duration<-dur
 startDays<-seq(1,366-duration,2)
 thresholds<-seq(0.01,0.99,0.01)
@@ -108,7 +105,7 @@ for(riv in rivers){
     days<-start:(start+duration)
     
     for(thresh in thresholds){
-      e<-env.cov("discharge",threshold=thresh,high.low="high",freq.dur="duration",days=days)
+      e<-env.cov("discharge",threshold=thresh,high.low=ifelse(thresh>0.5,"high","low"),freq.dur="duration",days=days)
       if(all(is.na(e[,column]))) next
       a<-lm(yoy~e[,column]+adults)
       rsq[which(start==startDays),which(thresh==thresholds),column]<-summary(a)$r.squared
@@ -122,15 +119,15 @@ for(riv in rivers){
    setTxtProgressBar(pb,which(start==startDays)+(column-1)*length(startDays))
   }
 }
-assign(paste0("rsq",dur),rsq)
-assign(paste0("aic",dur),aic)
-assign(paste0("slope",dur),slope)
-assign(paste0("rsqMean",dur),rsqMean)
-assign(paste0("aicMean",dur),aicMean)
-assign(paste0("slopeMean",dur),slopeMean)
+# assign(paste0("rsq",dur),rsq)
+# assign(paste0("aic",dur),aic)
+# assign(paste0("slope",dur),slope)
+# assign(paste0("rsqMean",dur),rsqMean)
+# assign(paste0("aicMean",dur),aicMean)
+# assign(paste0("slopeMean",dur),slopeMean)
 }
 
-rm(list=c("slope","rsq","aic"))
-toSave<-c(ls()[grepl("rsq",ls())],ls()[grepl("aic",ls())],ls()[grepl("slope",ls())])
-save(toSave,file="results/thresholdResults.rdata")
+# rm(list=c("slope","rsq","aic"))
+# toSave<-c(ls()[grepl("rsq",ls())],ls()[grepl("aic",ls())],ls()[grepl("slope",ls())])
+# save(toSave,file="results/thresholdResults.rdata")
 
