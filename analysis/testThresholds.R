@@ -90,8 +90,8 @@ duration<-dur
 startDays<-seq(1,366-duration,2)
 thresholds<-seq(0.01,0.99,0.01)
 
-rsq<-aic<-slope<-array(NA,dim=c(length(startDays),length(thresholds),nRivers))
-rsqMean<-aicMean<-slopeMean<-array(NA,dim=c(length(startDays),nRivers))
+rsq<-aic<-slope<-p<-array(NA,dim=c(length(startDays),length(thresholds),nRivers))
+rsqMean<-aicMean<-slopeMean<-pValueMean<-array(NA,dim=c(length(startDays),nRivers))
 pb<-txtProgressBar(0,nRivers*length(startDays),style=3)
 for(riv in rivers){
   column<-which(riv==rivers)
@@ -108,14 +108,17 @@ for(riv in rivers){
       rsq[which(start==startDays),which(thresh==thresholds),column]<-summary(a)$r.squared
       aic[which(start==startDays),which(thresh==thresholds),column]<-AICc(a)
       slope[which(start==startDays),which(thresh==thresholds),column]<-coef(a)[2]
+      p[which(start==startDays),which(thresh==thresholds),column]<-summary(a)$coefficients[11]
     }
     meanE<-env.cov("discharge",days=days,FUN=mean)
     meanModel<-lm(yoy~meanE[,column]+adults)
     rsqMean[which(start==startDays),column]<-summary(meanModel)$r.squared
     aicMean[which(start==startDays),column]<-AICc(meanModel)
+    pValueMean[which(start==startDays),column]<-summary(meanModel)$coefficients[11]
    setTxtProgressBar(pb,which(start==startDays)+(column-1)*length(startDays))
   }
 }
+assign(paste0("pValue",dur),p)
 assign(paste0("rsq",dur),rsq)
 assign(paste0("aic",dur),aic)
 assign(paste0("slope",dur),slope)
@@ -124,7 +127,8 @@ assign(paste0("aicMean",dur),aicMean)
 assign(paste0("slopeMean",dur),slopeMean)
 }
 
-rm(list=c("slope","rsq","aic"))
-toSave<-c(ls()[grepl("rsq",ls())],ls()[grepl("aic",ls())],ls()[grepl("slope",ls())])
+rm(list=c("slope","rsq","aic","p"))
+toSave<-c(ls()[grepl("rsq",ls())],ls()[grepl("aic",ls())],ls()[grepl("slope",ls())],
+          ls()[grepl("pValue",ls())])
 save(toSave,file="results/thresholdResults.rdata")
 
