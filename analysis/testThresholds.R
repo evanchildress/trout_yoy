@@ -105,7 +105,7 @@ for(riv in rivers){
     days<-start:(start+duration)
     
     for(thresh in thresholds){
-      e<-env.cov("discharge",threshold=thresh,high.low=ifelse(thresh>0.5,"high","low"),freq.dur="duration",days=days)
+      e<-env.cov("discharge",threshold=thresh,high.low=ifelse(thresh>0.5,"high","low"),freq.dur="sumAbove",days=days)
       if(all(is.na(e[,column]))) next
       a<-lm(yoy~e[,column]+adults)
       rsq[which(start==startDays),which(thresh==thresholds),column]<-summary(a)$r.squared

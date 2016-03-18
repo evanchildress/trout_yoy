@@ -1,0 +1,17 @@
+model{
+  ctMax~dnorm(0,0.01)
+  tOpt~dnorm(16,100)
+  sigma~dunif(0,10)
+  tau<-1/pow(sigma,2)
+  
+for(t in 1:nYears){
+  for(i in 1:nTimes){
+    perf[i,t]<-1-(((temp[i,t])-tOpt)/(tOpt-ctMax))^2
+  }
+  p[t]<-sum(perf[,t])
+}
+  
+  for(t in 1:nYears){
+    obs[t]~dnorm(p[t],tau)
+  }
+}
