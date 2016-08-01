@@ -1,6 +1,6 @@
 reconnect()
-#t<-tbl(conDplyr,"data_hourly_temperature") %>% collect() %>% data.table() %>% mutate(date=as.Date(datetime))
-#saveRDS(t,"cjsInputs/tempData.rds")
+# t<-tbl(conDplyr,"data_hourly_temperature") %>% collect(n=Inf) %>% mutate(date=as.Date(datetime)) %>% data.table()
+# saveRDS(t,"cjsInputs/tempData.rds")
 t<-readRDS("cjsInputs/tempData.rds")
 # if(qType=="flowExtension"){
 #   q<-tbl(conDplyr,"data_flow_extension") %>% collect() %>% data.table() %>%
@@ -13,7 +13,7 @@ t<-readRDS("cjsInputs/tempData.rds")
 #     setnames("qPredicted","discharge") %>%
 #     mutate(date=as.Date(date))} else {
 #       
-#   q<-tbl(conDplyr,"data_daily_discharge") %>% collect() %>% data.table()
+#   q<-tbl(conDplyr,"data_daily_discharge") %>% collect(n=Inf) %>% data.table()
 #     }
 
 #saveRDS(q,"cjsInputs/dischargeData.rds")

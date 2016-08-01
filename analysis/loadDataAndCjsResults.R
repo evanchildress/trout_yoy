@@ -1,18 +1,20 @@
 
 #get the raw data from the server
+library(getWBData)
 # trout<-createCoreData(includeUntagged=T) %>%
 #        addTagProperties() %>%
 #        filter(species==whichSpecies &
 #                 area %in% c("inside","trib")&
 #                 detectionDate>as.POSIXct("2002-01-01")) %>%
+#        mutate(enc=1) %>%
 #        addSampleProperties() %>%
 #        addEnvironmental(sampleFlow=T) %>%
 #        mutate(stage=as.numeric(year+season/4-0.25-cohort>1)+1) %>%
 #        mutate(riverName=river) %>%
 #        mutate(river=as.numeric(factor(river,levels=c('west brook','wb jimmy','wb mitchell','wb obear'),ordered=T))) %>%
 #        data.table()
-# 
-# saveRDS(trout,paste0("cjsInputs/",whichSpecies,"Core.rds"))
+#  saveRDS(trout,paste0("cjsInputs/",whichSpecies,"Core.rds"))
+
 trout<-readRDS(paste0("cjsInputs/",whichSpecies,"Core.rds"))
 
 nRivers<-length(unique(trout$river))
@@ -64,7 +66,7 @@ p<-readRDS(paste0("cjsInputs/",whichSpecies,"YoyP.rds")) %>%
   melt(id.vars=c("year","river")) %>%
   acast(year~river)
 
-adults<-readRDS(paste0("cjsInputs/",whichSpecies,"Alive.rds")) %>%
+adults<-readRDS(paste0("cjsInputs/",whichSpecies,"AdultAlive.rds")) %>%
   .[,":="(year=as.numeric(year),
        river=as.numeric(river),
        season=as.numeric(season),
@@ -102,7 +104,7 @@ for(r in 2:nRivers){
 }
 
 otherSpecies<-c("bnt","bkt")[which(whichSpecies!=c("bnt","bkt"))]
-otherSpeciesAdults<-readRDS(paste0("cjsInputs/",otherSpecies,"Alive.rds")) %>%
+otherSpeciesAdults<-readRDS(paste0("cjsInputs/",otherSpecies,"AdultAlive.rds")) %>%
   .[,":="(year=as.numeric(year),
           river=as.numeric(river),
           season=as.numeric(season),

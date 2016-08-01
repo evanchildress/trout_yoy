@@ -6,13 +6,13 @@ require(dplyr)
 # rmseOut<-list()
 # for(bla in c("flowExtension","dailyDischarge")){
 qType="dailyDischarge"
-for(whichSpecies in c("bkt","bnt")){
+for(whichSpecies in c("bkt")){
 source("analysis/loadDataAndCjsResults.R")
 source("analysis/covariateInputs.R")
 source("analysis/createCovariates.R")
 }
 
-for(whichSpecies in c("bkt","bnt")){
+for(whichSpecies in c("bkt")){
 jagsData<-readRDS(paste0("cjsInputs/jagsData",
                             toupper(substr(whichSpecies,1,1)),
                             substr(whichSpecies,2,nchar(whichSpecies)),
